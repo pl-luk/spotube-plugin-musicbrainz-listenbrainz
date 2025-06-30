@@ -1,32 +1,101 @@
 import 'module:std' as std
+import 'module:spotube_plugin' as spotube
 
 var StreamController = std.StreamController
 var Stream = std.Stream
 var StreamSubscription = std.StreamSubscription
 var HttpClient = std.HttpClient
+var HttpResponse = std.HttpResponse
+var SpotubeForm = spotube.SpotubeForm
+var LocalStorage = spotube.LocalStorage
+var JSON = std.JSON
 
 class AuthEndpoint {
-  var client: HttpClient
+  final lbApi: HttpClient
+  final mbApi: HttpClient
   final controller: StreamController
+
+  var credentials: Map
 
   get authStateStream -> Stream => controller.stream
 
-  construct (this.client){
+  construct (this.lbApi, this.mbApi){
     controller = StreamController.broadcast()
+
+    initialize()
+  }
+
+  fun initialize() {
+    LocalStorage.getString("lb_creds").then((credStr){
+      if (credStr == null || credStr.isEmpty) {
+        return
+      }
+      credentials = JSON.decode(credStr)
+      controller.add({ type: "recovered" }.toJson())
+    })
   }
   
   fun isAuthenticated() -> bool {
-    // TODO: Implement method
-    return false
+    return credentials != null
   }
 
   fun authenticate() -> Future {
-    // TODO: Implement method
+    return SpotubeForm.show(
+      "Listenbrainz Login",
+      [
+        {
+          objectType: "input",
+          id: "token",
+          variant: "text",
+          placeholder: "Enter your Listenbrainz token",
+          required: true,
+        }.toJson(),
+        {
+          objectType: "text",
+          text: "You can get your token from [Listenbrainz > Settings > User token](https://listenbrainz.org/settings/)",
+        }.toJson(),
+      ]
+    ).then((values){
+      if (values == null) {
+        return
+      }
+      
+      var token = values.where((e) => e["id"] == "token").first["value"]
+
+      if (token == null || token.isEmpty) {
+        throw "Token cannot be empty"
+      }
+
+      return lbApi.get_req(
+        "/validate-token",
+        queryParameters: {
+          "token": token
+        }.toJson(),
+      ).then((res) {
+        var data = res.data
+
+        if(data["valid"] != true) {
+          throw "Invalid token"
+        }
+
+        credentials = {
+          "token": token,
+          "username": data["user_name"]
+        }.toJson()
+
+        return LocalStorage.setString("lb_creds", JSON.encode(credentials)).then(() {
+          controller.add({ type: "login" }.toJson())
+        })
+      })
+    })
   }
 
 	fun logout() {
-		// TODO: Implement method
-	}
+    return LocalStorage.remove("lb_creds").then(() {
+      credentials = null
+      controller.add({ type: "logout" }.toJson())
+    })
+  }
 }
 
 export { AuthEndpoint }

@@ -1,5 +1,12 @@
+import "module:std" as std
+
+var HttpClient = std.HttpClient
+
 class AlbumEndpoint {
-  construct (this.client)
+  var lbApi: HttpClient
+  var mbApi: HttpClient
+
+  construct (this.lbApi, this.mbApi)
 
   fun getAlbum(id: string) {
     // TODO: Implement method

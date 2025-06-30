@@ -3,9 +3,10 @@ import "module:std" as std
 var HttpClient = std.HttpClient
 
 class BrowseEndpoint {
-  var client: HttpClient
+  var lbApi: HttpClient
+  var mbApi: HttpClient
 
-  construct (this.client)
+  construct (this.lbApi, this.mbApi)
 
   fun sections({offset: int, limit: int}) {
    // TODO: Implement method

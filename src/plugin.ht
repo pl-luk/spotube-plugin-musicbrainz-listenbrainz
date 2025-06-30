@@ -23,28 +23,46 @@ class BrainzMetadataProviderPlugin {
   var track: TrackEndpoint
   var user: UserEndpoint
 
-  var api: HttpClient
+  var lbApi: HttpClient
+  var mbApi: HttpClient
   
   construct (){
-    api = HttpClient(
+    mbApi = HttpClient(
       HttpBaseOptions(
-        baseUrl: "https://example.com"
+        baseUrl: "https://musicbrainz.org/ws/2"
+      )
+    )
+    lbApi = HttpClient(
+      HttpBaseOptions(
+        baseUrl: "https://api.listenbrainz.org/1",
       )
     )
     
-    auth = AuthEndpoint(api)
+    auth = AuthEndpoint(lbApi, mbApi)
 
-    album = AlbumEndpoint(api)
-    artist = ArtistEndpoint(api)
-    browse = BrowseEndpoint(api)
-    playlist = PlaylistEndpoint(api)
-    search = SearchEndpoint(api)
-    track = TrackEndpoint(api)
-    user = UserEndpoint(api)
-
+    setAccessToken()
     auth.authStateStream.listen((event) {
-      // get authentication events
+      setAccessToken()
     })
+  }
+
+  fun setAccessToken() {
+    lbApi = HttpClient(
+      HttpBaseOptions(
+        baseUrl: "https://api.listenbrainz.org/1",
+        headers: auth.credentials == null ? null : {
+          "Authorization": "Token ${auth.credentials['token']}"
+        }.toJson()
+      )
+    )
+    
+    album = AlbumEndpoint(lbApi, mbApi)
+    artist = ArtistEndpoint(lbApi, mbApi)
+    browse = BrowseEndpoint(lbApi, mbApi)
+    playlist = PlaylistEndpoint(lbApi, mbApi)
+    search = SearchEndpoint(lbApi, mbApi)
+    track = TrackEndpoint(lbApi, mbApi)
+    user = UserEndpoint(lbApi, mbApi)
   }
 }
 

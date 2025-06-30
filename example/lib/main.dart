@@ -1,4 +1,5 @@
 import 'package:desktop_webview_window/desktop_webview_window.dart';
+import 'package:example/form.dart';
 import 'package:example/localstorage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -84,13 +85,23 @@ class _MyHomeState extends State<MyHome> {
         }
         Navigator.pop(pageContext!);
       },
+      onShowForm: (title, fields) {
+        return Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) {
+              return FormPage(title: title, fields: fields);
+            },
+          ),
+        );
+      },
     );
 
     hetu.eval(r"""
     import "module:plugin" as plugin;
 
-    var TemplateMetadataProviderPlugin = plugin.TemplateMetadataProviderPlugin;
-    var metadata = TemplateMetadataProviderPlugin()
+    var BrainzMetadataProviderPlugin = plugin.BrainzMetadataProviderPlugin;
+    var metadata = BrainzMetadataProviderPlugin()
     """);
   }
 
@@ -102,7 +113,12 @@ class _MyHomeState extends State<MyHome> {
         children: [
           ElevatedButton(
             onPressed: () async {
-              await getIt<Hetu>().eval("metadata.auth.authenticate()");
+              try {
+                await getIt<Hetu>().eval("metadata.auth.authenticate()");
+              } catch (e, stackTrace) {
+                debugPrint("Error during authentication: $e");
+                debugPrintStack(stackTrace: stackTrace);
+              }
             },
             child: Text("Login"),
           ),

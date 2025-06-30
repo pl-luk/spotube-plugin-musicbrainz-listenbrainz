@@ -3,9 +3,10 @@ import "module:std" as std
 var HttpClient = std.HttpClient
 
 class PlaylistEndpoint {
-  var client: HttpClient
+  var lbApi: HttpClient
+  var mbApi: HttpClient
 
-  construct (this.client)
+  construct (this.lbApi, this.mbApi)
 
   fun getPlaylist(id: string) {
     // TODO: Implement method

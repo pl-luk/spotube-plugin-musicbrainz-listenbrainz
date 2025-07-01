@@ -5,8 +5,9 @@ var HttpClient = std.HttpClient
 class ArtistEndpoint {
   var lbApi: HttpClient
   var mbApi: HttpClient
+  final username: string
 
-  construct (this.lbApi, this.mbApi)
+  construct (this.lbApi, this.mbApi, this.username)
 
   fun getArtist(id: string) {
     // TODO: Implement method

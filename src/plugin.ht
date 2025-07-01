@@ -55,14 +55,16 @@ class BrainzMetadataProviderPlugin {
         }.toJson()
       )
     )
+
+    var username = auth.credentials == null ? null : auth.credentials['username']
     
-    album = AlbumEndpoint(lbApi, mbApi)
-    artist = ArtistEndpoint(lbApi, mbApi)
-    browse = BrowseEndpoint(lbApi, mbApi)
-    playlist = PlaylistEndpoint(lbApi, mbApi)
-    search = SearchEndpoint(lbApi, mbApi)
-    track = TrackEndpoint(lbApi, mbApi)
-    user = UserEndpoint(lbApi, mbApi)
+    album = AlbumEndpoint(lbApi, mbApi, username)
+    artist = ArtistEndpoint(lbApi, mbApi, username)
+    browse = BrowseEndpoint(lbApi, mbApi, username)
+    playlist = PlaylistEndpoint(lbApi, mbApi, username)
+    search = SearchEndpoint(lbApi, mbApi, username)
+    track = TrackEndpoint(lbApi, mbApi, username)
+    user = UserEndpoint(lbApi, mbApi, username)
   }
 }
 

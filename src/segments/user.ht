@@ -18,6 +18,8 @@ class UserEndpoint {
   }
 
   fun savedTracks({ offset: int, limit: int }) {
+    assert(username != null, "User is not authenticated")
+    
     return lbApi.get_req(
       "/feedback/user/${username}/get-feedback",
       queryParameters: {
@@ -53,6 +55,8 @@ class UserEndpoint {
   }
 
   fun savedPlaylists({ offset: int, limit: int }) {
+    assert(username != null, "Username must be set before calling savedPlaylists")
+    
     return lbApi.get_req(
       "/user/${username}/playlists",
       queryParameters: {
@@ -87,7 +91,7 @@ class UserEndpoint {
 
     if(albumIds.isEmpty) {
       return {
-        limit: limit ?? 20,
+        limit: 20,
         nextOffset: null, // No pagination for albums
         total: 0,
         hasMore: false,
@@ -191,6 +195,7 @@ class UserEndpoint {
   }
 
   fun savedAlbums({ offset: int, limit: int }) {
+    assert(username != null, "User is not authenticated")
     return internalSavedAlbums(
       lbApi, 
       mbApi,
@@ -201,6 +206,8 @@ class UserEndpoint {
   }
 
   fun getArtistsFromPlaylist(playlistId: string) -> Future {
+    assert(username != null, "User is not authenticated")
+    
     return lbApi.get_req("/playlist/${playlistId}").then((res){
       var data = res.data
       var artistIds = data["playlist"]["track"]
@@ -243,6 +250,8 @@ class UserEndpoint {
   }
 
   fun savedArtists({ offset: int, limit: int }) {
+    assert(username != null, "User is not authenticated")
+
     var name = "${username} saved artists by Spotube"
 
     return LocalStorage.getString("saved_artist_playlist_id").then((savedPlaylistId){
@@ -296,6 +305,8 @@ class UserEndpoint {
   }
 
   fun isSavedPlaylist(playlistId: string) { // Future<bool>
+    assert(username != null, "User is not authenticated")
+  
     return lbApi.get_req(
       "/playlist/${playlistId}",
       queryParameters: {
@@ -310,6 +321,8 @@ class UserEndpoint {
   }
 
   fun isSavedTracks(trackIds: List) { // Future<List<bool>>
+    assert(username != null, "User is not authenticated")
+  
     return lbApi.post(
       "/feedback/user/${username}/get-feedback-for-recordings",
       data: {
@@ -348,6 +361,8 @@ class UserEndpoint {
   }
 
   fun isSavedAlbums(albumIds: List) { // Future<List<bool>>
+    assert(username != null)
+  
     return internalIsSavedAlbums(lbApi, mbApi, username, albumIds)
   }
 

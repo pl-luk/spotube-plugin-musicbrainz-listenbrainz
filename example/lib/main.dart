@@ -353,7 +353,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.album.getAlbum('4aawyAB9vmqN3uQ7FjRGTy')",
+                    "metadata.album.getAlbum('9c5a6a5f-ec6e-4ab3-a183-a332bc9e6a01')",
                   );
                   debugPrint(result.toString());
                 },
@@ -362,7 +362,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.album.tracks('4aawyAB9vmqN3uQ7FjRGTy')",
+                    "metadata.album.tracks('9c5a6a5f-ec6e-4ab3-a183-a332bc9e6a01')",
                   );
                   debugPrint(result.toString());
                 },
@@ -380,7 +380,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    'metadata.album.save(["4aawyAB9vmqN3uQ7FjRGTy"])',
+                    'metadata.album.save(["9edb549d-b9cd-47b8-8b33-523b0bf8e301"])',
                   );
                   debugPrint(result.toString());
                 },
@@ -389,7 +389,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    'metadata.album.unsave(["4aawyAB9vmqN3uQ7FjRGTy"])',
+                    'metadata.album.unsave(["9edb549d-b9cd-47b8-8b33-523b0bf8e301"])',
                   );
                   debugPrint(result.toString());
                 },

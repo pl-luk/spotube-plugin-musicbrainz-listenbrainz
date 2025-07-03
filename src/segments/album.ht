@@ -1,6 +1,13 @@
 import "module:std" as std
+import "module:spotube_plugin" as spotube
+import { UserEndpoint } from "./user.ht"
+import { MbConverter } from "./converter.ht"
 
 var HttpClient = std.HttpClient
+var HttpResponse = std.HttpResponse
+var RequestOptions = std.RequestOptions
+var JSON = std.JSON
+var LocalStorage = spotube.LocalStorage
 
 class AlbumEndpoint {
   var lbApi: HttpClient
@@ -10,11 +17,44 @@ class AlbumEndpoint {
   construct (this.lbApi, this.mbApi, this.username)
 
   fun getAlbum(id: string) {
-    // TODO: Implement method
+    return mbApi.get_req(
+      "/release/${id}",
+      queryParameters: {
+        "fmt": "json",
+        "inc": "artists+release-groups"
+      }.toJson()
+    ).then((res){
+      var data = res.data
+
+      return MbConverter.releases([data]).first
+    })
   }
 
   fun tracks(id: string, {offset: int, limit: int}) {
-    // TODO: Implement method
+    return getAlbum(id).then((album){
+      return mbApi.get_req(
+        "/recording",
+        queryParameters: {
+          "fmt": "json",
+          "release": id,
+          "inc": "artist-credits+isrcs",
+          "offset": offset ?? 0,
+          "limit": limit ?? 20,
+        }.toJson()
+      ).then((res){
+        var data = res.data
+        var hasMore = data["recordings"].length >= (limit ?? 20)
+        var items = MbConverter.recordingWithoutAlbum(data["recordings"], album)
+
+        return {
+          limit: limit ?? 20,
+          nextOffset: hasMore ? data["recording-offset"] + (limit ?? 20) : null,
+          total: data["recording-count"],
+          hasMore: hasMore,
+          items: items
+        }.toJson()
+      })
+    })
   }
 
   fun releases({offset: int, limit: int}) {
@@ -22,10 +62,111 @@ class AlbumEndpoint {
   }
 
   fun save(albumIds: List) {
-    // TODO: Implement method
+    return UserEndpoint.internalIsSavedAlbums(lbApi, mbApi, username, albumIds)
+    .then((savedAlbums){
+      if(savedAlbums.contains(true)) {
+        throw "Some albums are already saved."
+      }
+
+      return UserEndpoint.getOrCreateAlbumPlaylist(username, lbApi)
+        .then((playlistId){
+          var tracksFutures = albumIds.map((albumId){
+            return mbApi.get_req(
+              "/recording",
+              queryParameters: {
+                "fmt": "json",
+                "release": albumId,
+                "limit": 1,
+                "offset": 0,
+              }.toJson()
+            ).then((res)=>res.data["recordings"].first["id"])
+          }).toList()
+
+          return Future.wait(tracksFutures)
+          .then((tracks){            
+            var data = {
+              playlist: {
+                  track: tracks.map((track) {
+                    return {
+                      identifier: "https://musicbrainz.org/recording/${track}"
+                    }
+                  }).toList()
+              }
+            }
+
+            return lbApi.post(
+              "/playlist/${playlistId}/item/add",
+              data: data.toJson(),
+              options: RequestOptions(
+                headers: {
+                  "Content-Type": "application/json"
+                }.toJson()
+              )
+            ).then((res){
+              return LocalStorage.setString(
+                "saved_album_ids",
+                albumIds.join(",")
+              ).then((_) {
+                return res.data
+              })
+            })
+          })
+        })
+    })
   }
 
   fun unsave(albumIds: List) {
-    // TODO: Implement method
+    assert(albumIds.isNotEmpty, "Album IDs cannot be empty.")
+    
+    return UserEndpoint.getOrCreateAlbumPlaylist(username, lbApi)
+    .then((playlistId) {
+      return UserEndpoint.getPlaylistTracks(playlistId, lbApi)
+      .then((tracks) {
+        var savedAlbumIds = tracks
+          .map((t) => t["extension"]["https://musicbrainz.org/doc/jspf#track"]["additional_metadata"]["caa_release_mbid"])
+          .toList()
+
+        if(albumIds.any((id) => !savedAlbumIds.contains(id))) {
+          throw "Some albums are not saved."
+        }
+
+        var trackIndexes = []
+        for(var i = 0; i < tracks.length; i++) {
+          var track = tracks[i]
+          var trackAlbumId = track["extension"]["https://musicbrainz.org/doc/jspf#track"]["additional_metadata"]["caa_release_mbid"]
+          if(albumIds.contains(trackAlbumId)) {
+            trackIndexes.add(i)
+          }
+        }
+
+        if(trackIndexes.isEmpty) {
+          throw "No albums to unsave."
+        }
+        
+        var deleteRequests = trackIndexes.map((index) {
+          return lbApi.post(
+            "/playlist/${playlistId}/item/delete",
+            data: {
+              index: index,
+              count: 1
+            }.toJson(),
+            options: RequestOptions(
+              headers: {
+                "Content-Type": "application/json"
+              }.toJson()
+            )
+          ).then((res) => res.data)
+        }).toList()
+
+        return Future.wait(deleteRequests).then((res){
+          return LocalStorage.getString("saved_album_ids").then((savedIds) {
+            var remainingIds = savedIds.split(",").where((id) => !albumIds.contains(id)).join(",")
+            return LocalStorage.setString("saved_album_ids", remainingIds).then((_) {
+              return res
+            })
+          })
+        })
+      })
+    })
   }
 }

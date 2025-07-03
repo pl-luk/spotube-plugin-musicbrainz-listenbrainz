@@ -93,6 +93,21 @@ class MbConverter {
       }.toJson()
     }).toList()
   }
+
+  static fun recordingWithoutAlbum(recordings: List, album: Map) -> List {
+    return recordings.map((recording){
+      return {
+        id: recording["id"],
+        name: recording["title"],
+        externalUri: "https://musicbrainz.org/recording/${recording["id"]}",
+        artists: artistsCredit(recording["artist-credit"]),
+        album: album,
+        durationMs: recording["length"] ?? 0,
+        isrc: recording["isrcs"]?.first,
+        explicit: recording["disambiguation"]?.toLowerCase() == "explicit",
+      }.toJson()
+    }).toList()
+  }
 }
 
 export { MbConverter }

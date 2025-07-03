@@ -171,7 +171,12 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.user.isSavedTracks(['11dFghVXANMlKmJXsNCbNl'])",
+                    """
+                    metadata.user.isSavedTracks([
+                      'd2555d82-571d-406c-8e96-21562753cebc',
+                      'a16e6dab-38d7-4ec6-b751-c1ebb5e62c22'
+                    ])
+                    """,
                   );
                   debugPrint(result.toString());
                 },
@@ -180,7 +185,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.user.isSavedPlaylist('3cEYpjA9oz9GiPac4AsH4n')",
+                    "metadata.user.isSavedPlaylist('dc2ad3e2-af4d-492f-a814-8179df4cee70')",
                   );
                   debugPrint(result.toString());
                 },
@@ -189,7 +194,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.user.isSavedAlbums(['4aawyAB9vmqN3uQ7FjRGTy'])",
+                    "metadata.user.isSavedAlbums(['2fddd479-26b1-457c-a8e2-09d2c71436bf'])",
                   );
                   debugPrint(result.toString());
                 },
@@ -198,7 +203,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.user.isSavedArtists(['0TnOYISbd1XYRBk9myaseg'])",
+                    "metadata.user.isSavedArtists(['80609a00-b394-4a49-975b-2db6b543fa97'])",
                   );
                   debugPrint(result.toString());
                 },

@@ -1,6 +1,9 @@
 import "module:std" as std
+import { MbConverter, LbConverter } from "./converter.ht"
 
 var HttpClient = std.HttpClient
+var HttpResponse = std.HttpResponse
+
 
 class ArtistEndpoint {
   var lbApi: HttpClient
@@ -10,15 +13,96 @@ class ArtistEndpoint {
   construct (this.lbApi, this.mbApi, this.username)
 
   fun getArtist(id: string) {
-    // TODO: Implement method
+    return mbApi.get_req("/artist/${id}?fmt=json").then((res){
+      var data = res.data
+
+      return MbConverter.artists([data]).first
+    })
   }
 
   fun topTracks(id: string, {limit: int, offset: int}) {
-    // TODO: Implement method
+    return mbApi.get_req(
+      "/release",
+      queryParameters: {
+        fmt: "json",
+        artist: id,
+        limit: 5,
+        offset: 0,
+        inc: "artist-credits+recordings+ratings+isrcs+release-groups"
+      }.toJson()
+    ).then((res){
+      var data = res.data
+
+      var tracks = data["releases"].expand((release){
+        var medias = release["media"].toList()
+        release["media"] = null
+
+        return medias.expand((media){
+          return media["tracks"].map((track){
+            track["recording"]["releases"] = [release]
+            return track["recording"]
+          }).toList()
+        }).toList()
+      }).toList()
+
+      // Remove duplicates
+      for (var i = 0; i < tracks.length; i++) {
+        for (var j = i + 1; j < tracks.length; j++) {
+          if (tracks[i]["title"] == tracks[j]["title"]) {
+            tracks.removeAt(j)
+            j--
+          }
+        }
+      }
+
+      tracks.sort((a, b) {
+        var aVoteCount = a["rating"]["votes-count"] ?? 0
+        var bVoteCount = b["rating"]["votes-count"] ?? 0
+        var aRating = a["rating"]["value"] ?? 0
+        var bRating = b["rating"]["value"] ?? 0
+
+        var aAvg = aVoteCount > 0 ? aRating / aVoteCount : 0
+        var bAvg = bVoteCount > 0 ? bRating / bVoteCount : 0
+
+        return bAvg.compareTo(aAvg)
+      })
+
+      var items = MbConverter.recordings(tracks)
+
+      return {
+        limit: limit ?? 10,
+        nextOffset: null,
+        total: items.length,
+        hasMore: false,
+        items: items
+      }.toJson()
+    })
   }
 
   fun albums(id: string, {offset: int, limit: int}) {
-    // TODO: Implement method
+    return mbApi.get_req(
+      "/release",
+      queryParameters: {
+        fmt: "json",
+        artist: id,
+        limit: limit ?? 20,
+        offset: offset ?? 0,
+        inc: "artist-credits+release-groups"
+      }.toJson()
+    ).then((res){
+      var data = res.data
+
+      var items = MbConverter.releases(data["releases"])
+      var hasMore = data["releases"].length < (limit ?? 20)
+
+      return {
+        limit: limit ?? 20,
+        nextOffset: hasMore ? data["release-offset"] + (limit ?? 20) : null,
+        total: data["release-count"],
+        hasMore: hasMore,
+        items: items
+      }.toJson()
+    })
   }
 
   fun save(artistIds: List) {

@@ -1,3 +1,7 @@
+import "module:std" as std
+
+var Regex = std.Regex
+
 class MbConverter {
   static fun user(username: string) -> Map {
     return {
@@ -110,4 +114,44 @@ class MbConverter {
   }
 }
 
-export { MbConverter }
+class LbConverter {
+  static fun freshReleases(releases: List) -> List {
+    return releases.map((release) {      
+      final regex = Regex("\\s*(&|and|vs\\.?|with|feat\\.?|featuring|ft\\.?|presents|/|;|×|\+|,)\\s+")
+      var artistNames = Regex.splitString(release["artist_credit_name"], regex).toList()
+      var albumType = release["release_group_primary_type"].toLowerCase() ?? "album"
+
+      var artists = []
+
+      for (var i = 0; i < release["artist_mbids"].length; i++) {
+        var id = release["artist_mbids"][i]
+        artists.add({
+          id: id,
+          name: artistNames[i],
+          externalUri: "https://musicbrainz.org/artist/${id}"
+        })
+      }
+      
+      return {
+        id: release["caa_release_mbid"]
+        name: release["release_name"]
+        externalUri: "https://musicbrainz.org/release/${release["caa_release_mbid"]}",
+        artists: artists,
+        images: [
+          {
+            height: 250,
+            width: 250,
+            url: "https://coverartarchive.org/release/${release["caa_release_mbid"]}/front-250.jpg",
+          },
+          // Too big.
+          // "https://coverartarchive.org/release/${release["caa_release_mbid"]}/front-500.jpg",
+          // "https://coverartarchive.org/release/${release["caa_release_mbid"]}/front-1200.jpg",
+        ],
+        albumType: ["album", "single", "compilation"].contains(albumType) ? albumType : "album",
+        releaseDate: release["release_date"],
+      }.toJson()
+    }).toList()
+  }
+}
+
+export { MbConverter, LbConverter }

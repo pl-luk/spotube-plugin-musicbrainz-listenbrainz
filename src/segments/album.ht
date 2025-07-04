@@ -1,7 +1,7 @@
 import "module:std" as std
 import "module:spotube_plugin" as spotube
 import { UserEndpoint } from "./user.ht"
-import { MbConverter } from "./converter.ht"
+import { MbConverter, LbConverter } from "./converter.ht"
 
 var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
@@ -58,7 +58,23 @@ class AlbumEndpoint {
   }
 
   fun releases({offset: int, limit: int}) {
-    // TODO: Implement method
+    return lbApi.get_req(
+      "/user/${username}/fresh_releases",
+      queryParameters: {
+        "future": "false"
+      }.toJson()
+    ).then((res){
+      var data = res.data
+      var items = LbConverter.freshReleases(data["payload"]["releases"])
+
+      return {
+        limit: limit ?? 20,
+        nextOffset: null,
+        total: items.length,
+        hasMore: false,
+        items: items
+      }.toJson()
+    })
   }
 
   fun save(albumIds: List) {

@@ -59,7 +59,6 @@ class MbConverter {
   
   static fun releases(releases: List) -> Map {
     return releases.map((album){
-      print("Processing album: ${album}")
       final releaseType = album["release-group"]["primary-type"]?.toLowerCase() ?? "album"
 
       return {

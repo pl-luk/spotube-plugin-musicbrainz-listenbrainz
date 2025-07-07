@@ -1,9 +1,12 @@
 import "module:std" as std
+import "module:spotube_plugin" as spotube
 import { MbConverter, LbConverter } from "./converter.ht"
+import { UserEndpoint } from "./user.ht"
 
 var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
-
+var RequestOptions = std.RequestOptions
+var LocalStorage = spotube.LocalStorage
 
 class ArtistEndpoint {
   var lbApi: HttpClient
@@ -12,11 +15,66 @@ class ArtistEndpoint {
 
   construct (this.lbApi, this.mbApi, this.username)
 
+  static fun getArtistImages(
+    client: HttpClient,
+    artistWikiDataUrl: string
+  ) {
+    var wikidataId = artistWikiDataUrl.split("/")?.last
+
+    return client.get_req(
+      "https://www.wikidata.org/w/api.php",
+      queryParameters: {
+        format: "json",
+        props: "claims",
+        ids: wikidataId,
+        action: "wbgetentities",
+      }.toJson()
+    ).then((res){
+      var data = res.data
+      var imageName = data["entities"][wikidataId]["claims"]["P18"][0]["mainsnak"]["datavalue"]["value"]
+
+      return client.get_req(
+        "https://commons.wikimedia.org/w/api.php",
+        queryParameters: {
+          action: "query",
+          titles: "File:${imageName}",
+          prop: "imageinfo",
+          iiprop: "url",
+          format: "json"
+        }.toJson()
+      ).then((res)=>res.data["query"]["pages"].values.first["imageinfo"].first["url"])
+    })
+    .then((imageUrl){
+      return [
+        {
+          url: imageUrl,
+          width: 500,
+          height: 500,
+        }.toJson()
+      ]
+    })
+  }
+
   fun getArtist(id: string) {
-    return mbApi.get_req("/artist/${id}?fmt=json").then((res){
+    return mbApi.get_req(
+      "/artist/${id}",
+      queryParameters: {
+        fmt: "json",
+        inc: "url-rels"
+      }.toJson()
+    ).then((res){
       var data = res.data
 
-      return MbConverter.artists([data]).first
+      var wikidataUrl = data["relations"].firstWhere(
+        (relation) => relation["type"] == "wikidata",
+        orElse: () => null
+      )?["url"]?["resource"]
+
+      return getArtistImages(mbApi, wikidataUrl).then((images){
+        var artist = MbConverter.artists([data]).first
+        artist["images"] = images
+        return artist
+      })
     })
   }
 
@@ -106,11 +164,110 @@ class ArtistEndpoint {
   }
 
   fun save(artistIds: List) {
-    // TODO: Implement method
+    return UserEndpoint.internalIsSavedArtists(lbApi, mbApi, username, artistIds)
+      .then((matches){
+        if (matches.any((match) => match)) {
+          throw "Artists already saved"
+        }
+
+        return UserEndpoint.getOrCreateArtistPlaylist(lbApi, username)
+        .then((playlistId) {
+          var tracksFutures = artistIds.map((artistId){
+            return mbApi.get_req(
+              "/recording",
+              queryParameters: {
+                "fmt": "json",
+                "artist": artistId,
+                "limit": 1,
+                "offset": 0,
+              }.toJson()
+            ).then((res)=>res.data["recordings"].first["id"])
+          }).toList()
+
+          return Future.wait(tracksFutures)
+          .then((tracks){            
+            var data = {
+              playlist: {
+                  track: tracks.map((track) {
+                    return {
+                      identifier: "https://musicbrainz.org/recording/${track}"
+                    }
+                  }).toList()
+              }
+            }
+
+            return lbApi.post(
+              "/playlist/${playlistId}/item/add",
+              data: data.toJson(),
+              options: RequestOptions(
+                headers: {
+                  "Content-Type": "application/json"
+                }.toJson()
+              )
+            ).then((res){
+              return LocalStorage.setString(
+                "saved_artist_ids",
+                artistIds.join(",")
+              ).then((_) => res.data)
+            })
+          })
+        })
+      })
   }
 
   fun unsave(artistIds: List) {
-    // TODO: Implement method
+    assert(artistIds.isNotEmpty, "Artist IDs cannot be empty.")
+    
+    return UserEndpoint.getOrCreateArtistPlaylist(lbApi, username)
+    .then((playlistId) {
+      return UserEndpoint.getPlaylistTracks(playlistId, lbApi)
+      .then((tracks) {
+        var savedArtistIds = tracks
+          .map((t) => t["extension"]["https://musicbrainz.org/doc/jspf#track"]["additional_metadata"]["artists"][0]["artist_mbid"])
+          .toList()
+
+        if(artistIds.any((id) => !savedArtistIds.contains(id))) {
+          throw "Some artists are not saved."
+        }
+
+        var trackIndexes = []
+        for(var i = 0; i < tracks.length; i++) {
+          var track = tracks[i]
+          var trackArtistId = track["extension"]["https://musicbrainz.org/doc/jspf#track"]["additional_metadata"]["artists"][0]["artist_mbid"]
+          if(artistIds.contains(trackArtistId)) {
+            trackIndexes.add(i)
+          }
+        }
+
+        if(trackIndexes.isEmpty) {
+          throw "No artist to unsave."
+        }
+        
+        var deleteRequests = trackIndexes.map((index) {
+          return lbApi.post(
+            "/playlist/${playlistId}/item/delete",
+            data: {
+              index: index,
+              count: 1
+            }.toJson(),
+            options: RequestOptions(
+              headers: {
+                "Content-Type": "application/json"
+              }.toJson()
+            )
+          ).then((res) => res.data)
+        }).toList()
+
+        return Future.wait(deleteRequests).then((res){
+          return LocalStorage.getString("saved_artist_ids").then((savedIds) {
+            var remainingIds = savedIds.split(",").where((id) => !artistIds.contains(id)).join(",")
+            return LocalStorage.setString("saved_artist_ids", remainingIds).then((_) {
+              return res
+            })
+          })
+        })
+      })
+    })
   }
 }
 

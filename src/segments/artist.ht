@@ -1,7 +1,8 @@
 import "module:std" as std
 import "module:spotube_plugin" as spotube
+import { EmulatedArtistAlbum } from "../common/album-artist.ht"
 import { MbConverter, LbConverter } from "./converter.ht"
-import { UserEndpoint } from "./user.ht"
+
 
 var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
@@ -13,7 +14,11 @@ class ArtistEndpoint {
   var mbApi: HttpClient
   final username: string
 
-  construct (this.lbApi, this.mbApi, this.username)
+  var emulator: EmulatedArtistAlbum
+
+  construct (this.lbApi, this.mbApi, this.username) {
+    this.emulator = EmulatedArtistAlbum(lbApi, mbApi, username)
+  }
 
   static fun getArtistImages(
     client: HttpClient,
@@ -164,110 +169,13 @@ class ArtistEndpoint {
   }
 
   fun save(artistIds: List) {
-    return UserEndpoint.internalIsSavedArtists(lbApi, mbApi, username, artistIds)
-      .then((matches){
-        if (matches.any((match) => match)) {
-          throw "Artists already saved"
-        }
-
-        return UserEndpoint.getOrCreateArtistPlaylist(lbApi, username)
-        .then((playlistId) {
-          var tracksFutures = artistIds.map((artistId){
-            return mbApi.get_req(
-              "/recording",
-              queryParameters: {
-                "fmt": "json",
-                "artist": artistId,
-                "limit": 1,
-                "offset": 0,
-              }.toJson()
-            ).then((res)=>res.data["recordings"].first["id"])
-          }).toList()
-
-          return Future.wait(tracksFutures)
-          .then((tracks){            
-            var data = {
-              playlist: {
-                  track: tracks.map((track) {
-                    return {
-                      identifier: "https://musicbrainz.org/recording/${track}"
-                    }
-                  }).toList()
-              }
-            }
-
-            return lbApi.post(
-              "/playlist/${playlistId}/item/add",
-              data: data.toJson(),
-              options: RequestOptions(
-                headers: {
-                  "Content-Type": "application/json"
-                }.toJson()
-              )
-            ).then((res){
-              return LocalStorage.setString(
-                "saved_artist_ids",
-                artistIds.join(",")
-              ).then((_) => res.data)
-            })
-          })
-        })
-      })
+    return emulator.save("artist", artistIds)
   }
 
   fun unsave(artistIds: List) {
-    assert(artistIds.isNotEmpty, "Artist IDs cannot be empty.")
+    assert(artistIds.isNotEmpty)
     
-    return UserEndpoint.getOrCreateArtistPlaylist(lbApi, username)
-    .then((playlistId) {
-      return UserEndpoint.getPlaylistTracks(playlistId, lbApi)
-      .then((tracks) {
-        var savedArtistIds = tracks
-          .map((t) => t["extension"]["https://musicbrainz.org/doc/jspf#track"]["additional_metadata"]["artists"][0]["artist_mbid"])
-          .toList()
-
-        if(artistIds.any((id) => !savedArtistIds.contains(id))) {
-          throw "Some artists are not saved."
-        }
-
-        var trackIndexes = []
-        for(var i = 0; i < tracks.length; i++) {
-          var track = tracks[i]
-          var trackArtistId = track["extension"]["https://musicbrainz.org/doc/jspf#track"]["additional_metadata"]["artists"][0]["artist_mbid"]
-          if(artistIds.contains(trackArtistId)) {
-            trackIndexes.add(i)
-          }
-        }
-
-        if(trackIndexes.isEmpty) {
-          throw "No artist to unsave."
-        }
-        
-        var deleteRequests = trackIndexes.map((index) {
-          return lbApi.post(
-            "/playlist/${playlistId}/item/delete",
-            data: {
-              index: index,
-              count: 1
-            }.toJson(),
-            options: RequestOptions(
-              headers: {
-                "Content-Type": "application/json"
-              }.toJson()
-            )
-          ).then((res) => res.data)
-        }).toList()
-
-        return Future.wait(deleteRequests).then((res){
-          return LocalStorage.getString("saved_artist_ids").then((savedIds) {
-            var remainingIds = savedIds.split(",").where((id) => !artistIds.contains(id)).join(",")
-            return LocalStorage.setString("saved_artist_ids", remainingIds).then((_) {
-              return res
-            })
-          })
-        })
-      })
-    })
+    return emulator.unsave("artist", artistIds)
   }
 }
 

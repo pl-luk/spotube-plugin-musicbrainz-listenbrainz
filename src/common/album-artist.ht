@@ -5,6 +5,7 @@ import { MbConverter } from "../segments/converter.ht"
 var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
 var RequestOptions = std.RequestOptions
+var JSON = std.JSON
 var LocalStorage = spotube.LocalStorage
 
 class EmulatedArtistAlbum {
@@ -47,9 +48,48 @@ class EmulatedArtistAlbum {
     })
   }
 
-  fun getPlaylistTracks(playlistId: string) -> Future {
-    return lbApi.get_req("/playlist/${playlistId}")
-    .then((res) => res.data["playlist"]["track"])
+  /// Emulates pagination for playlist tracks
+  fun getPlaylistTracks(playlistId: string, {
+    offset: int,
+    limit: int
+  }) -> Future {
+    offset ??= 0
+    limit ??= 20
+
+    var isAll = offset == -1 && limit == -1
+
+    var key = "playlist_${playlistId}_tracks"
+    return LocalStorage.getString(key).then((tracksJson){
+      var tracks = tracksJson == null ? null : JSON.decode(tracksJson)
+      var hasMore = tracks != null && tracks.length > offset + limit
+      var response = {
+        "limit": limit,
+        "nextOffset": hasMore ? offset + limit : null,
+        "total": tracks?.length ?? 0,
+        "hasMore": tracks != null && tracks.length > offset + limit,
+      }
+
+      if (tracks != null && tracks.isNotEmpty) {
+        return {
+          ...response,
+          "items": isAll ? tracks : tracks.skip(offset).take(limit).toList()
+        }.toJson()
+      }
+
+
+      return lbApi.get_req("/playlist/${playlistId}")
+      .then((res) {
+        var tracks = res.data["playlist"]["track"]
+        
+        return LocalStorage.setString(key, JSON.encode(tracks))
+        .then((_) {
+          return {
+            ...response,
+            "items": isAll ? tracks : tracks.skip(offset).take(limit).toList()
+          }.toJson()
+        })
+      })
+    })
   }
 
   /// @tracks - List of tracks from a playlist
@@ -70,13 +110,7 @@ class EmulatedArtistAlbum {
       .join(" OR ")
 
     if(entityIds.isEmpty) {
-      return {
-        limit: 20,
-        nextOffset: null, // No pagination for albums
-        total: 0,
-        hasMore: false,
-        items: []
-      }.toJson()
+      return Future.value([])
     }
 
     if(entity == "artist") {
@@ -88,15 +122,7 @@ class EmulatedArtistAlbum {
           fmt: "json"
         }.toJson()
       ).then((res){
-        var items = MbConverter.artists(res.data["artists"])
-
-        return {
-          limit: 20,
-          nextOffset: null, // No pagination for albums
-          total: tracks.length,
-          hasMore: false,
-          items: items
-        }.toJson()
+        return MbConverter.artists(res.data["artists"])
       })
     }
 
@@ -108,24 +134,26 @@ class EmulatedArtistAlbum {
         fmt: "json"
       }.toJson()
     ).then((res){
-      var items = MbConverter.releases(res.data["releases"])
-
-      return {
-        limit: 20,
-        nextOffset: null, // No pagination for albums
-        total: tracks.length,
-        hasMore: false,
-        items: items
-      }.toJson()
+      return MbConverter.releases(res.data["releases"])
     })
   }
 
   /// @entity - album or artist
-  fun getEntityFromPlaylist(entity: string, playlistId: string) -> Future {
+  fun getEntityFromPlaylist(
+    entity: string, 
+    playlistId: string, {
+    offset: int = 0,
+    limit: int = 20
+  }) -> Future {
     assert(entity == "album" || entity == "artist")
 
-    return getPlaylistTracks(playlistId)
-    .then((tracks) => getEntityFromPlaylistTracks(tracks, entity))
+    return getPlaylistTracks(playlistId, offset: offset, limit: limit)
+    .then((tracks) {
+      return getEntityFromPlaylistTracks(tracks["items"], entity).then((entities){
+        tracks["items"] = entities
+        return tracks
+      })
+    })
   }
 
   /// @entity - album or artist
@@ -186,11 +214,16 @@ class EmulatedArtistAlbum {
 
     return getOrCreatePlaylist(entity)
     .then((playlistId) {
-      return getEntityFromPlaylist(entity, playlistId)
-        .then((items){
-          var ids = items["items"].map((i) => i["id"])
-          return saveEntityCachedIds(entity, ids).then((_)=>items)
-        })
+      return getEntityFromPlaylist(
+        entity,
+        playlistId,
+        offset: offset,
+        limit: limit
+      )
+      .then((items){
+        var ids = items["items"].map((i) => i["id"])
+        return saveEntityCachedIds(entity, ids).then((_)=>items)
+      })
     })
   }
 
@@ -275,7 +308,8 @@ class EmulatedArtistAlbum {
     assert(entity == "album" || entity == "artist")
 
     return getOrCreatePlaylist(entity).then((playlistId){
-      return getPlaylistTracks(playlistId, lbApi).then((tracks){
+      return getPlaylistTracks(playlistId, offset: -1, limit: -1).then((res){
+        var tracks = res["items"]
         var savedEntityIds = tracks
           .map((t) {
             if(entity == "artist") {

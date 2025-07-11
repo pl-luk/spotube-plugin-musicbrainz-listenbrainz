@@ -1,6 +1,7 @@
 import "module:std" as std
 import "module:spotube_plugin" as spotube
 import { MbConverter } from "../segments/converter.ht"
+import { CommonArtistEntity } from "./artist.ht"
 
 var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
@@ -13,7 +14,11 @@ class EmulatedArtistAlbum {
   var mbApi: HttpClient
   final username: string
 
-  construct (this.lbApi, this.mbApi, this.username)
+  var artistCommon: CommonArtistEntity
+
+  construct (this.lbApi, this.mbApi, this.username) {
+    this.artistCommon = CommonArtistEntity(lbApi, mbApi, username)
+  }
 
   fun getEntityCachedIds(entity: string) -> Future {
     return LocalStorage.getString("saved_${entity}_ids")
@@ -107,29 +112,20 @@ class EmulatedArtistAlbum {
         var id = t["extension"]["https://musicbrainz.org/doc/jspf#track"]["additional_metadata"]["caa_release_mbid"]
         return "reid:${id}"
       })
-      .join(" OR ")
 
     if(entityIds.isEmpty) {
       return Future.value([])
     }
 
     if(entity == "artist") {
-      return mbApi.get_req(
-        "/artist",
-        queryParameters: {
-          query: entityIds,
-          limit: tracks.length,
-          fmt: "json"
-        }.toJson()
-      ).then((res){
-        return MbConverter.artists(res.data["artists"])
-      })
+      return artistCommon.listArtists(entityIds.map((id) => id.split(":").last).toList())
+      .then((artists) => MbConverter.artists(artists))
     }
 
     return mbApi.get_req(
       "/release",
       queryParameters: {
-        query: entityIds,
+        query: entityIds.join(" OR "),
         limit: tracks.length,
         fmt: "json"
       }.toJson()

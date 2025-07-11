@@ -43,7 +43,7 @@ class MbConverter {
         id: artist["id"],
         name: artist["name"],
         externalUri: "https://musicbrainz.org/artist/${artist["id"]}",
-        images: [],
+        images: artist["images"] ?? [],
       }.toJson()
     }).toList()
   }

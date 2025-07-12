@@ -34,7 +34,7 @@ class PlaylistEndpoint {
       id,
       offset: offset ?? 0,
       limit: limit ?? 20,
-      fetchMetadata: true
+      fetchMetadata: false
     ).then((tracks){
       var mbidQuery = tracks["items"].map((track) => "rid:${track["identifier"][0].split("/").last}").join(" OR ")
 
@@ -132,12 +132,64 @@ class PlaylistEndpoint {
   }
 
   fun addTracks(playlistId: string, { trackIds: List, position: int }) {
-    // TODO: Implement method
+    assert(playlistId != null)
+    assert(trackIds != null && trackIds.isNotEmpty)
+
+    var positionStr = position != null ? "/${position}" : ""
+
+    return lbApi.post(
+      "/playlist/${playlistId}/item/add${positionStr}",
+      data: {
+        playlist: {
+          track: trackIds.map((trackId) {
+            return {
+              identifier: "https://musicbrainz.org/recording/${trackId}",
+              extension: {
+                "https://musicbrainz.org/doc/jspf#track": {
+                  added_by: username
+                }
+              }
+            }
+          }).toList()
+        }
+      }.toJson()
+    ).then((_) => null)
   }
 
 
   fun removeTracks(playlistId: string, { trackIds: List }) {
-    // TODO: Implement method
+    return emulated.getPlaylistTracks(
+      playlistId,
+      offset: -1,
+      limit: -1,
+      fetchMetadata: false
+    ).then((res){
+      var tracks = res["items"].map((track) => track["identifier"][0].split("/").last).toList()
+
+      var trackIndexes = []
+
+      for(var i = 0; i < tracks.length; i++) {
+        var track = tracks[i]
+        if(!trackIds.contains(track)) continue
+        trackIndexes.add(i)
+      }
+
+      if(trackIndexes.isEmpty) {
+        throw "No tracks found to remove from the playlist."
+      }
+
+      var deleteFutures = trackIndexes.map((index){
+        return lbApi.post(
+          "/playlist/${playlistId}/item/delete",
+          data: {
+            index: index,
+            count: 1,
+          }.toJson()
+        )
+      }).toList()
+
+      return Future.wait(deleteFutures).then((_) => null)
+    })
   }
 
   fun save(playlistId: string) {

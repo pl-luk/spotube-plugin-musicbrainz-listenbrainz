@@ -335,7 +335,7 @@ class _MyHomeState extends State<MyHome> {
                 onPressed: () async {
                   // Create playlist must be called first
                   final result = await getIt<Hetu>().eval(
-                    'metadata.playlist.addTracks(myPlaylist["id"], trackIds: ["5zCnGtCl5Ac5zlFHXaZmhy"])',
+                    'metadata.playlist.addTracks(myPlaylist["id"], trackIds: ["a817f622-2f84-428a-86e0-c50378d886bc"])',
                   );
                   debugPrint(result.toString());
                 },
@@ -345,7 +345,7 @@ class _MyHomeState extends State<MyHome> {
                 onPressed: () async {
                   // Create playlist must be called first
                   final result = await getIt<Hetu>().eval(
-                    'metadata.playlist.removeTracks(myPlaylist["id"], trackIds: ["5zCnGtCl5Ac5zlFHXaZmhy"])',
+                    'metadata.playlist.removeTracks(myPlaylist["id"], trackIds: ["a817f622-2f84-428a-86e0-c50378d886bc"])',
                   );
                   debugPrint(result.toString());
                 },

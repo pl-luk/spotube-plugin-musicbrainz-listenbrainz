@@ -56,7 +56,8 @@ class EmulatedArtistAlbum {
   /// Emulates pagination for playlist tracks
   fun getPlaylistTracks(playlistId: string, {
     offset: int,
-    limit: int
+    limit: int,
+    fetchMetadata: bool
   }) -> Future {
     offset ??= 0
     limit ??= 20
@@ -82,7 +83,12 @@ class EmulatedArtistAlbum {
       }
 
 
-      return lbApi.get_req("/playlist/${playlistId}")
+      return lbApi.get_req(
+        "/playlist/${playlistId}",
+        queryParameters: {
+          fetchMetadata: fetchMetadata == null || fetchMetadata ? "true" : "false",
+        }.toJson(),
+      )
       .then((res) {
         var tracks = res.data["playlist"]["track"]
         

@@ -1,20 +1,55 @@
 import "module:std" as std
+import { EmulatedArtistAlbum } from "../common/album-artist.ht"
+import { MbConverter } from "./converter.ht"
 
 var HttpClient = std.HttpClient
+var HttpResponse = std.HttpResponse
 
 class PlaylistEndpoint {
   var lbApi: HttpClient
   var mbApi: HttpClient
   final username: string
 
-  construct (this.lbApi, this.mbApi, this.username)
+  var emulated: EmulatedArtistAlbum
 
-  fun getPlaylist(id: string) {
-    // TODO: Implement method
+  construct (this.lbApi, this.mbApi, this.username) {
+    this.emulated = EmulatedArtistAlbum(this.lbApi, this.mbApi, this.username)
   }
 
-  fun tracks(id: string, { offset: int, limit: int }) {
-    // TODO: Implement method
+  fun getPlaylist(id: string) {
+    return lbApi.get_req(
+      "/playlist/${id}",
+      queryParameters: {
+        fetchMetadata: "false",
+      }.toJson()
+    ).then((res){
+      var data = res.data
+
+      return MbConverter.playlists([data])[0]
+    })
+  }
+
+  fun tracks(id: string, { offset: int, limit: int }) {    
+    return emulated.getPlaylistTracks(
+      id,
+      offset: offset ?? 0,
+      limit: limit ?? 20,
+      fetchMetadata: true
+    ).then((tracks){
+      var mbidQuery = tracks["items"].map((track) => "rid:${track["identifier"][0].split("/").last}").join(" OR ")
+
+      return mbApi.get_req(
+        "/recording",
+        queryParameters: {
+          query: mbidQuery,
+          limit: limit ?? 20,
+          fmt: "json",
+        }.toJson()
+      ).then((res){
+        tracks["items"] = MbConverter.recordings(res.data["recordings"])
+        return tracks
+      })
+    })
   }
 
   fun create(userId: string, {
@@ -23,7 +58,26 @@ class PlaylistEndpoint {
     public: bool,
     collaborative: bool
   }) {
-    // TODO: Implement method
+    return lbApi.post(
+      "/playlist/create",
+      data: {
+        playlist: {
+          title: name,
+          annotation: description,
+          creator: userId,
+          extension: {
+            "https://musicbrainz.org/doc/jspf#playlist": {
+              creator: userId,
+              public: public ?? false,
+              collaborative: collaborative ?? false,
+            }
+          },
+          
+        }
+      }.toJson()
+    ).then((res) {
+      return this.getPlaylist(res.data["playlist_mbid"])
+    })
   }
 
   fun update(playlistId: string, {
@@ -32,11 +86,49 @@ class PlaylistEndpoint {
     public: bool,
     collaborative: bool
   }) {
-    // TODO: Implement method
+    assert(playlistId != null)
+
+    // At least one of these fields must be provided
+    if(name == null && description == null && public == null && collaborative == null) {
+      throw "At least one field must be provided to update the playlist."
+    }
+
+    final body = {
+      playlist: {
+        // title: name,
+        // annotation: description,
+        extension: {
+          "https://musicbrainz.org/doc/jspf#playlist": {
+            // public: public ?? false,
+            // collaborative: collaborative ?? false,
+          }
+        },
+      }
+    }.toJson()
+
+    if(name != null) {
+      body["playlist"]["title"] = name
+    }
+    if(description != null) {
+      body["playlist"]["annotation"] = description
+    }
+    if(public != null) {
+      body["playlist"]["extension"]["https://musicbrainz.org/doc/jspf#playlist"]["public"] = public
+    }
+    if(collaborative != null) {
+      body["playlist"]["extension"]["https://musicbrainz.org/doc/jspf#playlist"]["collaborative"] = collaborative
+    }
+
+    return lbApi.post(
+      "/playlist/edit/${playlistId}",
+      data: body
+    ).then((_) => null)
   }
 
   fun deletePlaylist(playlistId: string) {
-    // TODO: Implement method
+    assert(playlistId != null)
+
+    return lbApi.post("/playlist/${playlistId}/delete").then((_) => null)
   }
 
   fun addTracks(playlistId: string, { trackIds: List, position: int }) {

@@ -110,6 +110,7 @@ class _MyHomeState extends State<MyHome> {
     return Scaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 12,
         children: [
           ElevatedButton(
             onPressed: () async {
@@ -123,7 +124,9 @@ class _MyHomeState extends State<MyHome> {
             child: Text("Login"),
           ),
           Text("User"),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
               ElevatedButton(
                 onPressed: () async {
@@ -213,6 +216,7 @@ class _MyHomeState extends State<MyHome> {
           ),
           Text("Tracks"),
           Row(
+            spacing: 12,
             children: [
               ElevatedButton(
                 onPressed: () async {
@@ -244,12 +248,14 @@ class _MyHomeState extends State<MyHome> {
             ],
           ),
           Text("Playlists"),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.playlist.getPlaylist('3cEYpjA9oz9GiPac4AsH4n')",
+                    "metadata.playlist.getPlaylist('dc2ad3e2-af4d-492f-a814-8179df4cee70')",
                   );
                   debugPrint(result.toString());
                 },
@@ -258,7 +264,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.playlist.tracks('3cEYpjA9oz9GiPac4AsH4n')",
+                    "metadata.playlist.tracks('dc2ad3e2-af4d-492f-a814-8179df4cee70')",
                   );
                   debugPrint(result.toString());
                 },
@@ -301,7 +307,7 @@ class _MyHomeState extends State<MyHome> {
                 onPressed: () async {
                   // Create playlist must be called first
                   final result = await getIt<Hetu>().eval(
-                    'metadata.playlist.unsave(myPlaylist["id"])',
+                    'metadata.playlist.deletePlaylist(myPlaylist["id"])',
                   );
                   debugPrint(result.toString());
                 },
@@ -349,6 +355,7 @@ class _MyHomeState extends State<MyHome> {
           ),
           Text("Albums"),
           Row(
+            spacing: 12,
             children: [
               ElevatedButton(
                 onPressed: () async {
@@ -399,6 +406,7 @@ class _MyHomeState extends State<MyHome> {
           ),
           Text("Artists"),
           Row(
+            spacing: 12,
             children: [
               ElevatedButton(
                 onPressed: () async {
@@ -449,6 +457,7 @@ class _MyHomeState extends State<MyHome> {
           ),
           Text("Search"),
           Row(
+            spacing: 12,
             children: [
               ElevatedButton(
                 onPressed: () async {
@@ -499,6 +508,7 @@ class _MyHomeState extends State<MyHome> {
           ),
           Text("Browse"),
           Row(
+            spacing: 12,
             children: [
               ElevatedButton(
                 onPressed: () async {

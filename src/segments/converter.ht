@@ -121,12 +121,15 @@ class LbConverter {
     return releases
     .where((r)=>r["release_group_secondary_type"] != "Live")
     .map((release) {      
-      final regex = Regex("\\s*(&|and|vs\\.?|with|feat\\.?|featuring|ft\\.?|presents|/|;|×|\+|,)\\s+")
+      final regex = Regex("\\s*(x|X|&|and|vs\\.?|with|feat\\.?|featuring|ft\\.?|presents|/|;|×|\+|,)\\s+")
       var artistNames = Regex.splitString(release["artist_credit_name"], regex).toList()
       var albumType = release["release_group_primary_type"].toLowerCase() ?? "album"
 
       var artists = []
 
+      if(artistNames.length < release["artist_mbids"].length) {
+        artistNames = release["artist_credit_name"].split(".")
+      }
       for (var i = 0; i < release["artist_mbids"].length; i++) {
         var id = release["artist_mbids"][i]
         artists.add({
@@ -155,6 +158,10 @@ class LbConverter {
         releaseDate: release["release_date"],
       }.toJson()
     }).toList()
+  }
+
+  static fun tracks(tracks: List) -> List {
+    
   }
 }
 

@@ -85,6 +85,7 @@ class MbConverter {
   static fun recordings(recordings: List) -> List {
     return recordings.map((recording){
       var album = officialRelease(recording["releases"])
+      var explicit = recording["disambiguation"]?.toLowerCase() == "explicit"
 
       return {
         id: recording["id"],
@@ -93,8 +94,8 @@ class MbConverter {
         artists: artistsCredit(recording["artist-credit"]),
         album: releases([album])[0],
         durationMs: recording["length"] ?? 0,
-        isrc: recording["isrcs"].isEmpty ? "" : recording["isrcs"].first,
-        explicit: recording["disambiguation"]?.toLowerCase() == "explicit",
+        isrc: recording["isrcs"]?.isEmpty ?? true ? "" : recording["isrcs"].first,
+        explicit: explicit,
       }.toJson()
     }).toList()
   }

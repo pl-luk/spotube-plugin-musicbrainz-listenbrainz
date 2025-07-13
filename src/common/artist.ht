@@ -75,7 +75,7 @@ class CommonArtistEntity {
     })
   }
 
-  fun listArtists(artistIds: List) {
+  fun listArtists(artistIds: List) -> Future { // Future<List>
     var ids = artistIds.map((id) => "targetid:${id}").join(" OR ")
     var query = "relationtype:wikidata AND targettype:artist AND (${ids})"
     

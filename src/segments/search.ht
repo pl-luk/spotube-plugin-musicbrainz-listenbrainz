@@ -1,32 +1,134 @@
 import "module:std" as std
+import { MbConverter } from "./converter.ht"
+import { CommonArtistEntity } from "../common/artist.ht"
 
 var HttpClient = std.HttpClient
+var HttpResponse = std.HttpResponse
 
 class SearchEndpoint {
   var lbApi: HttpClient
   var mbApi: HttpClient
   final username: string
+  var artistCommon: CommonArtistEntity
 
-  construct (this.lbApi, this.mbApi, this.username)
+  construct (this.lbApi, this.mbApi, this.username) {
+    this.artistCommon = CommonArtistEntity(lbApi, mbApi, username)
+  }
 
   fun all(query: string) {
-    // TODO: Implement method
+    return Future.wait([
+      playlists(query),
+      tracks(query),
+    ]).then((results){
+      var playlistRes = results[0]["items"]
+      var trackRes = results[1]["items"]
+      return artists(query).then((res){
+        var artistRes = res["items"]
+        return albums(query).then((res){
+          var albumRes = res["items"]
+          return {
+            "playlists": playlistRes,
+            "tracks": trackRes,
+            "artists": artistRes,
+            "albums": albumRes
+          }.toJson()
+        })
+      })
+    })
   }
 
   fun albums(query: string, {offset: int, limit: int}) {
-    // TODO: Implement method
+    return mbApi.get_req(
+      "/release",
+      queryParameters: {
+        query: 'release:"${query}" OR artist:"${query}" OR artistname:"${query}" OR label:"${query}" OR creditname:"${query}"',
+        limit: limit ?? 10,
+        offset: offset ?? 0,
+        fmt: "json",
+      }.toJson()
+    ).then((res){
+      var items = MbConverter.releases(res.data["releases"])
+      var hasMore = items.length >= (limit ?? 10)
+
+      return {
+        limit: limit ?? 10,
+        nextOffset: hasMore ? res.data["offset"] + (limit ?? 10) : null,
+        total: res.data["count"],
+        hasMore: hasMore,
+        items: items
+      }.toJson()
+    })
   }
 
   fun artists(query: string, {offset: int, limit: int}) {
-    // TODO: Implement method
+    return mbApi.get_req(
+      "/artist",
+      queryParameters: {
+        query: 'artist:"${query}" OR comment:"${query}"',
+        limit: limit ?? 10,
+        offset: offset ?? 0,
+        fmt: "json",
+      }.toJson()
+    ).then((res){
+      var artistIds = res.data["artists"].map((artist) => artist["id"]).toList()
+
+      return artistCommon.listArtists(artistIds).then((artists) {
+        var items = MbConverter.artists(artists)
+        var hasMore = items.length >= (limit ?? 10)
+        return {
+          limit: limit ?? 10,
+          nextOffset: hasMore ? res.data["offset"] + (limit ?? 10) : null,
+          total: res.data["count"],
+          hasMore: hasMore,
+          items: items
+        }.toJson()
+      })
+    })
   }
 
   fun tracks(query: string, {offset: int, limit: int}) {
-    // TODO: Implement method
+    return mbApi.get_req(
+      "/recording",
+      queryParameters: {
+        query: 'recording:"${query}" OR release:"${query}" OR artist:"${query}" OR artistname:"${query}" OR creditname:"${query}"',
+        limit: limit ?? 10,
+        offset: offset ?? 0,
+        fmt: "json",
+      }.toJson()
+    ).then((res){
+      var items = MbConverter.recordings(res.data["recordings"])
+      var hasMore = items.length >= (limit ?? 10)
+
+      return {
+        limit: limit ?? 10,
+        nextOffset: hasMore ? res.data["offset"] + (limit ?? 10) : null,
+        total: res.data["count"],
+        hasMore: hasMore,
+        items: items
+      }.toJson()
+    })
   }
 
   fun playlists(query: string, {offset: int, limit: int}) {
-    // TODO: Implement method
+    return lbApi.get_req(
+      "/playlist/search",
+      queryParameters: {
+        query: query,
+        count: limit ?? 10,
+        offset: offset ?? 0,
+      }.toJson()
+    ).then((res){
+      var items = MbConverter.playlists(res.data["playlists"])
+      var hasMore = items.length >= (limit ?? 10)
+      
+      return {
+        limit: limit ?? 10,
+        nextOffset: hasMore ? res.data["offset"] + (limit ?? 10) : null,
+        total: res.data["playlist_count"],
+        hasMore: hasMore,
+        items: items
+      }.toJson()
+    })
   }
 }
 

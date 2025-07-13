@@ -26,11 +26,13 @@ class CommonArtistEntity {
       var idsWithImageNames = wikiIds.map((id){
         return {
           id: id,
-          imageName: data["entities"][id]["claims"]["P18"][0]["mainsnak"]["datavalue"]["value"]
+          imageName: data?["entities"]?[id]?["claims"]?["P18"]?[0]?["mainsnak"]?["datavalue"]?["value"]
         }
       }).toList()
 
-      var titles = idsWithImageNames.map((i) => "File:${i.imageName}").join("|")
+      var titles = idsWithImageNames
+      .where((i) => i.imageName != null)
+      .map((i) => "File:${i.imageName}").join("|")
       
       return mbApi.get_req(
         "https://commons.wikimedia.org/w/api.php",
@@ -44,9 +46,16 @@ class CommonArtistEntity {
           titles: titles,
         }.toJson()
       ).then((res) {
-        var pages = res.data["query"]["pages"]
+        var pages = res.data?["query"]?["pages"]
 
         var imagesMap = Map()
+
+        if(pages == null) {
+          for(var id in wikiIds) {
+            imagesMap[id] = []
+          }
+          return imagesMap
+        }
 
         for(var page in pages.values) {
           var imageInfo = page["imageinfo"][0]
@@ -69,6 +78,15 @@ class CommonArtistEntity {
               height: imageInfo["thumbheight"],
             }.toJson()
           ]
+        }
+
+        final missingImageArtistIds = idsWithImageNames
+          .where((i) => i.imageName == null)
+          .map((i) => i.id)
+          .toList()
+        
+        for (var id in missingImageArtistIds) {
+          imagesMap[id] = []
         }
 
         return imagesMap

@@ -456,6 +456,18 @@ class _MyHomeState extends State<MyHome> {
             ],
           ),
           Text("Search"),
+          TextField(
+            decoration: InputDecoration(
+              labelText: "Search Query",
+              hintText: "Enter search query",
+            ),
+            onSubmitted: (query) async {
+              final result = await getIt<Hetu>().eval(
+                "metadata.search.all('$query')",
+              );
+              debugPrint(result.toString());
+            },
+          ),
           Row(
             spacing: 12,
             children: [

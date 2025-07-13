@@ -76,7 +76,7 @@ class MbConverter {
             height: 500,
             width: 500,
             url: "https://coverartarchive.org/release/${album["id"]}/front-500.jpg",
-          }
+          },
           // Too big.
           // "https://coverartarchive.org/release/${album["id"]}/front-1200.jpg",
         ],
@@ -159,7 +159,7 @@ class LbConverter {
             height: 500,
             width: 500,
             url: "https://coverartarchive.org/release/${release["release_mbid"]}/front-500.jpg",
-          }
+          },
           // Too big.
           // "https://coverartarchive.org/release/${release["caa_release_mbid"]}/front-1200.jpg",
         ],

@@ -53,7 +53,7 @@ class MbConverter {
         (r)=> 
           r["status"] == "Official" && r["country"] == "US"
           && (r["artist-credit"]?.every((a)=>a["artist"]["name"] != "Various Artists") ?? true)
-      ).toList()
+      ).toList()    
     return albums.isNotEmpty ? albums.first : releases.first
   }
   
@@ -87,7 +87,12 @@ class MbConverter {
   }
   
   static fun recordings(recordings: List) -> List {
-    return recordings.map((recording){
+    return recordings
+    .where((recording) => 
+      recording["releases"] != null && recording["releases"].isNotEmpty
+      && recording["artist-credit"] != null && recording["artist-credit"].isNotEmpty
+    )
+    .map((recording){
       var album = officialRelease(recording["releases"])
       var explicit = recording["disambiguation"]?.toLowerCase() == "explicit"
 

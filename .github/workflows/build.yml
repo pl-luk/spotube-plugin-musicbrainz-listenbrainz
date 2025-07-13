@@ -1,0 +1,37 @@
+name: Plugin Build
+on:
+  # push:
+  #   branches:
+  #     - main
+  # pull_request:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.29.2
+
+      - name: Install dependencies
+        run: dart pub global activate hetu_script_dev_tools
+      
+      - name: Run build
+        run: make
+
+      - name: Archive plugin
+        run: make archive
+      
+      - name: Upload plugin archive
+        uses: actions/upload-artifact@v4
+        with:
+          path: build/plugin.smplug
+      

@@ -121,7 +121,7 @@ class ArtistEndpoint {
       var data = res.data
 
       var items = MbConverter.releases(data["releases"])
-      var hasMore = data["releases"].length < (limit ?? 20)
+      var hasMore = data["releases"].length >= (limit ?? 20)
 
       return {
         limit: limit ?? 20,

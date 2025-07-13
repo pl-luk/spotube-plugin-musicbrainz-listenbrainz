@@ -17,7 +17,7 @@ class SearchEndpoint {
 
   get chips -> List { // Set<string>
     // can be tracks, playlists, artists, albums and all
-    return ["tracks", "playlists", "artists", "albums"]
+    return ["tracks", "albums", "artists", "playlists"]
   }
 
   fun all(query: string) {

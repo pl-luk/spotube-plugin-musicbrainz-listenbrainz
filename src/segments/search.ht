@@ -47,6 +47,18 @@ class SearchEndpoint {
         fmt: "json",
       }.toJson()
     ).then((res){
+      if (res.data["releases"].isEmpty) {
+        return {
+          limit: limit ?? 10,
+          nextOffset: null,
+          total: 0,
+          hasMore: false,
+          items: []
+        }.toJson()
+      }
+
+      print("\n\nAlbums: ${res.data["releases"]}\n\n")
+      
       var items = MbConverter.releases(res.data["releases"])
       var hasMore = items.length >= (limit ?? 10)
 
@@ -72,6 +84,16 @@ class SearchEndpoint {
     ).then((res){
       var artistIds = res.data["artists"].map((artist) => artist["id"]).toList()
 
+      if (artistIds.isEmpty) {
+        return {
+          limit: limit ?? 10,
+          nextOffset: null,
+          total: 0,
+          hasMore: false,
+          items: []
+        }.toJson()
+      }
+
       return artistCommon.listArtists(artistIds).then((artists) {
         var items = MbConverter.artists(artists)
         var hasMore = items.length >= (limit ?? 10)
@@ -96,6 +118,16 @@ class SearchEndpoint {
         fmt: "json",
       }.toJson()
     ).then((res){
+      if (res.data["recordings"].isEmpty) {
+        return {
+          limit: limit ?? 10,
+          nextOffset: null,
+          total: 0,
+          hasMore: false,
+          items: []
+        }.toJson()
+      }
+      
       var items = MbConverter.recordings(res.data["recordings"])
       var hasMore = items.length >= (limit ?? 10)
 
@@ -118,6 +150,16 @@ class SearchEndpoint {
         offset: offset ?? 0,
       }.toJson()
     ).then((res){
+      if (res.data["playlists"].isEmpty) {
+        return {
+          limit: limit ?? 10,
+          nextOffset: null,
+          total: 0,
+          hasMore: false,
+          items: []
+        }.toJson()
+      }
+      
       var items = MbConverter.playlists(res.data["playlists"])
       var hasMore = items.length >= (limit ?? 10)
       

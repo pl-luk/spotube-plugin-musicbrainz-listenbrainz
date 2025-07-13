@@ -57,11 +57,12 @@ class CommonArtistEntity {
           ).id
 
           imagesMap[wikiId] = [
-            {
-              url: imageInfo["url"],
-              width: imageInfo["width"],
-              height: imageInfo["height"],
-            }.toJson(),
+            // Too big.
+            // {
+            //   url: imageInfo["url"],
+            //   width: imageInfo["width"],
+            //   height: imageInfo["height"],
+            // }.toJson(),
             {
               url: imageInfo["thumburl"],
               width: imageInfo["thumbwidth"],

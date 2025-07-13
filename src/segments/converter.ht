@@ -52,7 +52,7 @@ class MbConverter {
     final albums = releases.where(
         (r)=> 
           r["status"] == "Official" && r["country"] == "US"
-          && r["artist-credit"].every((a)=>a["artist"]["name"] != "Various Artists")
+          && (r["artist-credit"]?.every((a)=>a["artist"]["name"] != "Various Artists") ?? true)
       ).toList()
     return albums.isNotEmpty ? albums.first : releases.first
   }

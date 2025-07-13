@@ -15,6 +15,11 @@ class SearchEndpoint {
     this.artistCommon = CommonArtistEntity(lbApi, mbApi, username)
   }
 
+  get chips -> List { // Set<string>
+    // can be tracks, playlists, artists, albums and all
+    return ["tracks", "playlists", "artists", "albums"]
+  }
+
   fun all(query: string) {
     return Future.wait([
       playlists(query),
@@ -41,7 +46,8 @@ class SearchEndpoint {
     return mbApi.get_req(
       "/release",
       queryParameters: {
-        query: 'release:"${query}" OR artist:"${query}" OR artistname:"${query}" OR label:"${query}" OR creditname:"${query}"',
+        query: query.contains(":") ? query : 
+          'release:"${query}" OR artist:"${query}" OR artistname:"${query}" OR label:"${query}" OR creditname:"${query}"',
         limit: limit ?? 10,
         offset: offset ?? 0,
         fmt: "json",
@@ -55,10 +61,8 @@ class SearchEndpoint {
           hasMore: false,
           items: []
         }.toJson()
-      }
+      }      
 
-      print("\n\nAlbums: ${res.data["releases"]}\n\n")
-      
       var items = MbConverter.releases(res.data["releases"])
       var hasMore = items.length >= (limit ?? 10)
 
@@ -76,7 +80,7 @@ class SearchEndpoint {
     return mbApi.get_req(
       "/artist",
       queryParameters: {
-        query: 'artist:"${query}" OR comment:"${query}"',
+        query: query.contains(":") ? query : 'artist:"${query}" OR comment:"${query}"',
         limit: limit ?? 10,
         offset: offset ?? 0,
         fmt: "json",
@@ -112,7 +116,8 @@ class SearchEndpoint {
     return mbApi.get_req(
       "/recording",
       queryParameters: {
-        query: 'recording:"${query}" OR release:"${query}" OR artist:"${query}" OR artistname:"${query}" OR creditname:"${query}"',
+        query: query.contains(":") ? query : 
+          'recording:"${query}" OR release:"${query}" OR artist:"${query}" OR artistname:"${query}" OR creditname:"${query}"',
         limit: limit ?? 10,
         offset: offset ?? 0,
         fmt: "json",

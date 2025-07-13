@@ -37,8 +37,9 @@ jobs:
           path: build/plugin.smplug
 
       - name: Upload to release (continuous)
-        uses: softprops/action-gh-release@v2
+        uses: ncipollo/release-action@v1
         with:
-          files: build/plugin.smplug
-          tag_name: continuous
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: continuous
+          artifacts: build/plugin.smplug
       

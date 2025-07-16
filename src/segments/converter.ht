@@ -130,8 +130,8 @@ class LbConverter {
   static fun freshReleases(releases: List) -> List {
     return releases
     .where((r)=>r["release_group_secondary_type"] != "Live")
-    .map((release) {      
-      final regex = Regex("\\s*(x|X|&|and|vs\\.?|with|feat\\.?|featuring|ft\\.?|presents|/|;|×|\+|,)\\s+")
+    .map((release) {
+      final regex = Regex("\\s*(x|X|&|and|vs\\.?|with|feat\\.?|featuring|ft\\.?|presents|/|;|×|\\+|,)\\s*")
       var artistNames = Regex.splitString(release["artist_credit_name"], regex).toList()
       var albumType = release["release_group_primary_type"].toLowerCase() ?? "album"
 

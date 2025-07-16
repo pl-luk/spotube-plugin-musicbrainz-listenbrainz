@@ -68,7 +68,7 @@ class UserEndpoint {
         count: limit ?? 20,
         offset: offset ?? 0,
       }.toJson()
-    ).then((res){
+    ).then((res) {
       var data = res.data
       var hasMore = data["playlists"].length >= (limit ?? 20)
 
@@ -79,7 +79,10 @@ class UserEndpoint {
         nextOffset: hasMore ? data["offset"] + data["count"] : null,
         total: data["playlist_count"],
         hasMore: hasMore,
-        items: items
+        items: items.where((item){
+          return item["name"] != "${username} saved artists by Spotube" &&
+            item["name"] != "${username} saved albums by Spotube"
+        }).toList(),
       }.toJson()
     })
   }

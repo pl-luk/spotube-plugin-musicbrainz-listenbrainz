@@ -22,15 +22,15 @@ class AlbumEndpoint {
 
   fun getAlbum(id: string) {
     return mbApi.get_req(
-      "/release/${id}",
+      "/release-group/${id}",
       queryParameters: {
         "fmt": "json",
-        "inc": "artists+release-groups"
+        "inc": "artists"
       }.toJson()
     ).then((res){
       var data = res.data
 
-      return MbConverter.releases([data]).first
+      return MbConverter.releaseGroups([data]).first
     })
   }
 
@@ -40,8 +40,7 @@ class AlbumEndpoint {
         "/recording",
         queryParameters: {
           "fmt": "json",
-          "release": id,
-          "inc": "artist-credits+isrcs",
+          "query": "rgid:${id}",
           "offset": offset ?? 0,
           "limit": limit ?? 20,
         }.toJson()
@@ -52,8 +51,8 @@ class AlbumEndpoint {
 
         return {
           limit: limit ?? 20,
-          nextOffset: hasMore ? data["recording-offset"] + (limit ?? 20) : null,
-          total: data["recording-count"],
+          nextOffset: hasMore ? data["offset"] + (limit ?? 20) : null,
+          total: data["count"],
           hasMore: hasMore,
           items: items
         }.toJson()

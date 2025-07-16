@@ -59,29 +59,59 @@ class MbConverter {
   
   static fun releases(releases: List) -> Map {
     return releases.map((album){
+      final releaseGroup = album["release-group"]
       final releaseType = album["release-group"]["primary-type"]?.toLowerCase() ?? "album"
 
       return {
-        id: album["id"],
-        name: album["title"],
-        externalUri: "https://musicbrainz.org/release/${album["id"]}",
+        id: releaseGroup["id"],
+        name: releaseGroup["title"],
+        externalUri: "https://musicbrainz.org/release-group/${releaseGroup["id"]}",
         artists: album["artist-credit"] == null ? [] : artistsCredit(album["artist-credit"]),
         images: [
           {
             height: 250,
             width: 250,
-            url: "https://coverartarchive.org/release/${album["id"]}/front-250.jpg",
+            url: "https://coverartarchive.org/release-group/${releaseGroup["id"]}/front-250.jpg",
           },
           {
             height: 500,
             width: 500,
-            url: "https://coverartarchive.org/release/${album["id"]}/front-500.jpg",
+            url: "https://coverartarchive.org/release-group/${releaseGroup["id"]}/front-500.jpg",
           },
           // Too big.
           // "https://coverartarchive.org/release/${album["id"]}/front-1200.jpg",
         ],
         albumType: ["album", "single", "compilation"].contains(releaseType) ? releaseType : "album",
         releaseDate: album["date"],
+      }.toJson()
+    }).toList()
+  }
+
+  static fun releaseGroups(groups: List) -> Map {
+    return groups.map((releaseGroup){      
+      final releaseType = releaseGroup["primary-type"]?.toLowerCase() ?? "album"
+
+      return {
+        id: releaseGroup["id"],
+        name: releaseGroup["title"],
+        externalUri: "https://musicbrainz.org/release-group/${releaseGroup["id"]}",
+        artists: releaseGroup["artist-credit"] == null ? [] : artistsCredit(releaseGroup["artist-credit"]),
+        images: [
+          {
+            height: 250,
+            width: 250,
+            url: "https://coverartarchive.org/release-group/${releaseGroup["id"]}/front-250.jpg",
+          },
+          {
+            height: 500,
+            width: 500,
+            url: "https://coverartarchive.org/release-group/${releaseGroup["id"]}/front-500.jpg",
+          },
+          // Too big.
+          // "https://coverartarchive.org/release/${album["id"]}/front-1200.jpg",
+        ],
+        albumType: ["album", "single", "compilation"].contains(releaseType) ? releaseType : "album",
+        releaseDate: releaseGroup["first-release-date"],
       }.toJson()
     }).toList()
   }
@@ -118,7 +148,7 @@ class MbConverter {
         artists: artistsCredit(recording["artist-credit"]),
         album: album,
         durationMs: recording["length"] ?? 0,
-        isrc: recording["isrcs"]?.isEmpty ? "" : recording["isrcs"].first,
+        isrc: recording["isrcs"]?.isEmpty ?? true ? "" : recording["isrcs"].first,
         explicit: recording["disambiguation"]?.toLowerCase() == "explicit",
       }.toJson()
     })

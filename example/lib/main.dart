@@ -197,7 +197,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.user.isSavedAlbums(['2fddd479-26b1-457c-a8e2-09d2c71436bf'])",
+                    "metadata.user.isSavedAlbums(['dbecf03e-18ab-4d35-8371-a30c1dc356ba'])",
                   );
                   debugPrint(result.toString());
                 },
@@ -360,7 +360,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.album.getAlbum('9c5a6a5f-ec6e-4ab3-a183-a332bc9e6a01')",
+                    "metadata.album.getAlbum('dbecf03e-18ab-4d35-8371-a30c1dc356ba')",
                   );
                   debugPrint(result.toString());
                 },
@@ -369,7 +369,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    "metadata.album.tracks('9c5a6a5f-ec6e-4ab3-a183-a332bc9e6a01')",
+                    "metadata.album.tracks('dbecf03e-18ab-4d35-8371-a30c1dc356ba')",
                   );
                   debugPrint(result.toString());
                 },
@@ -387,7 +387,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    'metadata.album.save(["9edb549d-b9cd-47b8-8b33-523b0bf8e301"])',
+                    'metadata.album.save(["b45ace46-81cd-4832-93a4-62baaefe6893"])',
                   );
                   debugPrint(result.toString());
                 },
@@ -396,7 +396,7 @@ class _MyHomeState extends State<MyHome> {
               ElevatedButton(
                 onPressed: () async {
                   final result = await getIt<Hetu>().eval(
-                    'metadata.album.unsave(["9edb549d-b9cd-47b8-8b33-523b0bf8e301"])',
+                    'metadata.album.unsave(["b45ace46-81cd-4832-93a4-62baaefe6893"])',
                   );
                   debugPrint(result.toString());
                 },

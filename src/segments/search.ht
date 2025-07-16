@@ -44,16 +44,16 @@ class SearchEndpoint {
 
   fun albums(query: string, {offset: int, limit: int}) {
     return mbApi.get_req(
-      "/release",
+      "/release-group",
       queryParameters: {
         query: query.contains(":") ? query : 
-          'release:"${query}" OR artist:"${query}" OR artistname:"${query}" OR label:"${query}" OR creditname:"${query}"',
+          'releasegroup:"${query}" OR artist:"${query}" OR artistname:"${query}" OR label:"${query}" OR creditname:"${query}"',
         limit: limit ?? 10,
         offset: offset ?? 0,
         fmt: "json",
       }.toJson()
     ).then((res){
-      if (res.data["releases"].isEmpty) {
+      if (res.data["release-groups"].isEmpty) {
         return {
           limit: limit ?? 10,
           nextOffset: null,
@@ -63,7 +63,7 @@ class SearchEndpoint {
         }.toJson()
       }      
 
-      var items = MbConverter.releases(res.data["releases"])
+      var items = MbConverter.releaseGroups(res.data["release-groups"])
       var hasMore = items.length >= (limit ?? 10)
 
       return {

@@ -46,8 +46,7 @@ class SearchEndpoint {
     return mbApi.get_req(
       "/release-group",
       queryParameters: {
-        query: query.contains(":") ? query : 
-          'releasegroup:"${query}" OR artist:"${query}" OR artistname:"${query}" OR label:"${query}" OR creditname:"${query}"',
+        query: query,
         limit: limit ?? 10,
         offset: offset ?? 0,
         fmt: "json",
@@ -80,7 +79,7 @@ class SearchEndpoint {
     return mbApi.get_req(
       "/artist",
       queryParameters: {
-        query: query.contains(":") ? query : 'artist:"${query}" OR comment:"${query}"',
+        query: query,
         limit: limit ?? 10,
         offset: offset ?? 0,
         fmt: "json",
@@ -116,8 +115,7 @@ class SearchEndpoint {
     return mbApi.get_req(
       "/recording",
       queryParameters: {
-        query: query.contains(":") ? query : 
-          'recording:"${query}" OR release:"${query}" OR artist:"${query}" OR artistname:"${query}" OR creditname:"${query}"',
+        query: query,
         limit: limit ?? 10,
         offset: offset ?? 0,
         fmt: "json",

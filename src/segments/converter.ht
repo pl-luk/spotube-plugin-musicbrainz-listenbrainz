@@ -108,7 +108,7 @@ class MbConverter {
             url: "https://coverartarchive.org/release-group/${releaseGroup["id"]}/front-500.jpg",
           },
           // Too big.
-          // "https://coverartarchive.org/release/${album["id"]}/front-1200.jpg",
+          // "https://coverartarchive.org/release-group/${album["id"]}/front-1200.jpg",
         ],
         albumType: ["album", "single", "compilation"].contains(releaseType) ? releaseType : "album",
         releaseDate: releaseGroup["first-release-date"],
@@ -180,23 +180,23 @@ class LbConverter {
       }
       
       return {
-        id: release["release_mbid"],
+        id: release["release_group_mbid"],
         name: release["release_name"],
-        externalUri: "https://musicbrainz.org/release/${release["release_mbid"]}",
+        externalUri: "https://musicbrainz.org/release-group/${release["release_group_mbid"]}",
         artists: artists,
         images: [
           {
             height: 250,
             width: 250,
-            url: "https://coverartarchive.org/release/${release["release_mbid"]}/front-250.jpg",
+            url: "https://coverartarchive.org/release-group/${release["release_group_mbid"]}/front-250.jpg",
           },
           {
             height: 500,
             width: 500,
-            url: "https://coverartarchive.org/release/${release["release_mbid"]}/front-500.jpg",
+            url: "https://coverartarchive.org/release-group/${release["release_group_mbid"]}/front-500.jpg",
           },
           // Too big.
-          // "https://coverartarchive.org/release/${release["caa_release_mbid"]}/front-1200.jpg",
+          // "https://coverartarchive.org/release-group/${release["release_group_mbid"]}/front-1200.jpg",
         ],
         albumType: ["album", "single", "compilation"].contains(albumType) ? albumType : "album",
         releaseDate: release["release_date"],

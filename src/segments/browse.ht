@@ -1,6 +1,8 @@
 import "module:std" as std
+import { MbConverter } from "./converter.ht"
 
 var HttpClient = std.HttpClient
+var HttpResponse = std.HttpResponse
 
 class BrowseEndpoint {
   var lbApi: HttpClient
@@ -9,8 +11,38 @@ class BrowseEndpoint {
 
   construct (this.lbApi, this.mbApi, this.username)
 
+  fun getCreatedForPlaylists() {
+    return lbApi.get_req(
+      "/user/${username}/playlists/createdfor",
+      queryParameters: {
+        count: 25,
+        offset: 0
+      }.toJson()
+    ).then((res){
+      var playlists = res.data["playlists"]
+
+      return MbConverter.playlists(playlists)
+    })
+  }
+
   fun sections({offset: int, limit: int}) {
-   // TODO: Implement method
+    return getCreatedForPlaylists().then((playlists) {
+      return {
+        limit: limit ?? 25,
+        nextOffset: null,
+        total: 1,
+        hasMore: false,
+        items: [
+          {
+            id: "created-for-playlists",
+            title: "Created for you",
+            externalUri: "https://listenbrainz.org/user/${username}/recommendations/",
+            browseMore: false,
+            items: playlists
+          }.toJson()
+        ]
+      }.toJson()
+    })
   }
 
   fun sectionItems(id: string, {offset: int, limit: int}) {

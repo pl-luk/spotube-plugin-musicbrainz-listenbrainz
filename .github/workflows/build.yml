@@ -44,5 +44,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: continuous
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          omitPrereleaseDuringUpdate: true
+          allowUpdates: true
           artifacts: build/plugin.smplug
       

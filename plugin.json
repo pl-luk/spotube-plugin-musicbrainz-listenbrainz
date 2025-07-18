@@ -6,5 +6,7 @@
   "description": "Musicbrainz and Listenbrainz integration for Spotube",
   "entryPoint": "BrainzMetadataProviderPlugin",
   "apis": ["webview", "localstorage", "timezone"],
-  "abilities": ["authentication"]
+  "abilities": ["authentication"],
+  "repository": "https://github.com/KRTirtho/spotube-plugin-musicbrainz-listenbrainz",
+  "pluginApiVersion": "1.0.0"
 }

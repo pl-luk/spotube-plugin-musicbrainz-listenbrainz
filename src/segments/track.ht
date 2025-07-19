@@ -1,6 +1,8 @@
 import "module:std" as std
+import { MbConverter } from "./converter.ht"
 
 var HttpClient = std.HttpClient
+var HttpResponse = std.HttpResponse
 
 class TrackEndpoint {
   var lbApi: HttpClient
@@ -10,15 +12,88 @@ class TrackEndpoint {
   construct (this.lbApi, this.mbApi, this.username)
 
   fun getTrack(id: string) {
-    // TODO: Implement method
+    return mbApi.get_req(
+      "/recording/${id}",
+      queryParameters: {
+        fmt: "json",
+        inc: "artist-credits+releases+release-groups+isrcs"
+      }.toJson()
+    ).then((res) {
+      var data = res.data
+      var track = MbConverter.recordings([data]).first
+      return track
+    })
   }
 
   fun save(trackIds: List) {
-    // TODO: Implement method
+    return Future.wait(
+      trackIds.map((id) {
+        return lbApi.post(
+          "/feedback/recording-feedback",
+          data: {
+            recording_mbid: id,
+            score: 1,
+          }.toJson(),
+        )
+      }).toList()
+    ).then((res)=>null)
   }
 
   fun unsave(trackIds: List) {
-    // TODO: Implement method
+    return Future.wait(
+      trackIds.map((id) {
+        return lbApi.post(
+          "/feedback/recording-feedback",
+          data: {
+            recording_mbid: id,
+            score: 0,
+          }.toJson(),
+        )
+      }).toList()
+    ).then((res)=>null)
+  }
+
+  fun radio(id: string) {
+    return mbApi.get_req(
+      "/recording/${id}",
+      queryParameters: {
+        fmt: "json",
+        inc: "artist-credits+tags"
+      }.toJson()
+    ).then((res) {
+      var data = res.data
+      var artistIds = data["artist-credit"].map((credit) => credit["artist"]["id"]).toList()
+      var tags = data["tags"]?.map((tag) => tag["name"])?.toList() ?? []
+      var artistQuery = artistIds.join(",")
+      var tagsQuery = tags.join(",")
+      var query = "artist:(${artistQuery}):3:easy"
+      if (tagsQuery.isNotEmpty) {
+        query += " tags:(${tagsQuery}):2:easy"
+      }
+
+      return lbApi.get_req(
+        "/explore/lb-radio",
+        queryParameters: {
+          prompt: query,
+          mode: "easy"
+        }.toJson(),
+      ).then((res) {
+        var recordingMbids = res.data["payload"]["jspf"]["playlist"]["track"]
+          .map((track) => "rid:${track["identifier"][0].split("/").last}").toList()
+
+        return mbApi.get_req(
+          "/recording",
+          queryParameters: {
+            fmt: "json",
+            query: recordingMbids.join(" OR "),
+            inc: "artist-credits+releases+release-groups+isrcs",
+          }.toJson(),
+        ).then((res) {
+          var tracks = MbConverter.recordings(res.data["recordings"]).toList()
+          return tracks
+        })
+      })
+    })
   }
 }
 

@@ -8,6 +8,7 @@ import { PlaylistEndpoint } from './segments/playlist.ht'
 import { SearchEndpoint } from './segments/search.ht'
 import { TrackEndpoint } from './segments/track.ht'
 import { UserEndpoint } from './segments/user.ht'
+import { PluginUpdater } from './segments/updater.ht'
 
 var Stream = std.Stream
 var HttpClient = std.HttpClient
@@ -22,6 +23,7 @@ class BrainzMetadataProviderPlugin {
   var search: SearchEndpoint
   var track: TrackEndpoint
   var user: UserEndpoint
+  var updater: PluginUpdater
 
   var lbApi: HttpClient
   var mbApi: HttpClient
@@ -39,6 +41,7 @@ class BrainzMetadataProviderPlugin {
     )
     
     auth = AuthEndpoint(lbApi, mbApi)
+    updater = PluginUpdater(mbApi) // Just a generic [HttpClient]
 
     setAccessToken()
     auth.authStateStream.listen((event) {

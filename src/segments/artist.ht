@@ -142,6 +142,10 @@ class ArtistEndpoint {
     
     return emulator.unsave("artist", artistIds)
   }
+
+  fun related(artistId: string, {limit: int, offset: int}) {
+    // TODO: Implement related artists
+  }
 }
 
 export { ArtistEndpoint }

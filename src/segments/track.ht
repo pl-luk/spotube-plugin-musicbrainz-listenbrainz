@@ -64,9 +64,9 @@ class TrackEndpoint {
       var data = res.data
       var artistIds = data["artist-credit"].map((credit) => credit["artist"]["id"]).toList()
       var tags = data["tags"]?.map((tag) => tag["name"])?.toList() ?? []
-      var artistQuery = artistIds.join(",")
+      var artistQuery = artistIds.map((id)=>"artist:(${id})").join(" ")
       var tagsQuery = tags.join(",")
-      var query = "artist:(${artistQuery}):3:easy"
+      var query = "${artistQuery}"
       if (tagsQuery.isNotEmpty) {
         query += " tag:(${tagsQuery}):2:easy"
       }

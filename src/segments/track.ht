@@ -68,7 +68,7 @@ class TrackEndpoint {
       var tagsQuery = tags.join(",")
       var query = "artist:(${artistQuery}):3:easy"
       if (tagsQuery.isNotEmpty) {
-        query += " tags:(${tagsQuery}):2:easy"
+        query += " tag:(${tagsQuery}):2:easy"
       }
 
       return lbApi.get_req(

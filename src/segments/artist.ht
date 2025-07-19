@@ -144,7 +144,27 @@ class ArtistEndpoint {
   }
 
   fun related(artistId: string, {limit: int, offset: int}) {
-    // TODO: Implement related artists
+    return lbApi.get_req(
+      "/lb-radio/artist/${artistId}",
+      queryParameters: {
+        mode: "medium",
+        max_similar_artists: limit ?? 20,
+        max_recordings_per_artist: 1,
+        pop_begin: 20,
+        pop_end: 100,
+      }.toJson()
+    ).then((res){
+      var artistIds = res.data.keys
+      return artistCommon.listArtists(artistIds).then((items){
+        return {
+          limit: limit ?? 20,
+          nextOffset: null,
+          total: artistIds.length,
+          hasMore: false,
+          items: items
+        }.toJson()
+      })
+    })
   }
 }
 

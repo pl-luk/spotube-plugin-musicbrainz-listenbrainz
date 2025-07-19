@@ -469,6 +469,15 @@ class _MyHomeState extends State<MyHome> {
                 ElevatedButton(
                   onPressed: () async {
                     final result = await getIt<Hetu>().eval(
+                      "metadata.artist.related('a6c6897a-7415-4f8d-b5a5-3a5e05f3be67')",
+                    );
+                    prettyPrint(result);
+                  },
+                  child: Text("Related Artists"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final result = await getIt<Hetu>().eval(
                       "metadata.artist.albums('a6c6897a-7415-4f8d-b5a5-3a5e05f3be67')",
                     );
                     prettyPrint(result);

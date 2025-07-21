@@ -400,7 +400,7 @@ class _MyHomeState extends State<MyHome> {
                 ElevatedButton(
                   onPressed: () async {
                     final result = await getIt<Hetu>().eval(
-                      "metadata.album.getAlbum('dbecf03e-18ab-4d35-8371-a30c1dc356ba')",
+                      "metadata.album.getAlbum('0f9d5103-dd09-4fcd-8fe1-223612668f09')",
                     );
                     prettyPrint(result);
                   },
@@ -409,7 +409,7 @@ class _MyHomeState extends State<MyHome> {
                 ElevatedButton(
                   onPressed: () async {
                     final result = await getIt<Hetu>().eval(
-                      "metadata.album.tracks('dbecf03e-18ab-4d35-8371-a30c1dc356ba')",
+                      "metadata.album.tracks('0f9d5103-dd09-4fcd-8fe1-223612668f09')",
                     );
                     prettyPrint(result);
                   },

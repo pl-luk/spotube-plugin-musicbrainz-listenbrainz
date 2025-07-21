@@ -35,25 +35,32 @@ class AlbumEndpoint {
   }
 
   fun tracks(id: string, {offset: int, limit: int}) {
-    return getAlbum(id).then((album){
+    return mbApi.get_req(
+      "/release-group/${id}",
+      queryParameters: {
+        "fmt": "json",
+        "inc": "artists+releases"
+      }.toJson()
+    ).then((res){
+      var data = res.data
+      var album = MbConverter.releaseGroups([data]).first
+      var officialRelease = MbConverter.officialRelease(data["releases"])
+      
       return mbApi.get_req(
         "/recording",
         queryParameters: {
           "fmt": "json",
-          "query": "rgid:${id}",
-          "offset": offset ?? 0,
-          "limit": limit ?? 20,
+          "query": "reid:${officialRelease["id"]}",
         }.toJson()
       ).then((res){
         var data = res.data
-        var hasMore = data["recordings"].length >= (limit ?? 20)
         var items = MbConverter.recordingWithoutAlbum(data["recordings"], album)
 
         return {
           limit: limit ?? 20,
-          nextOffset: hasMore ? data["offset"] + (limit ?? 20) : null,
+          nextOffset: null,
           total: data["count"],
-          hasMore: hasMore,
+          hasMore: false,
           items: items
         }.toJson()
       })

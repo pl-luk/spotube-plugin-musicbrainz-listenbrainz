@@ -153,9 +153,11 @@ class ArtistEndpoint {
         pop_begin: 20,
         pop_end: 100,
       }.toJson()
-    ).then((res){
+    ).then((res) {
       var artistIds = res.data.keys
-      return artistCommon.listArtists(artistIds).then((items){
+      return artistCommon.listArtists(artistIds).then((artists){
+        var items = MbConverter.artists(artists)
+        
         return {
           limit: limit ?? 20,
           nextOffset: null,

@@ -6,6 +6,7 @@ var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
 var LocalStorage = spotube.LocalStorage
 var JSON = std.JSON
+var DateTime = std.DateTime
 
 
 class Recommendations {
@@ -107,9 +108,19 @@ class Recommendations {
     assert(["easy", "medium", "hard"].contains(mode))
     var playlistId = "lb-radio-playlist-${prompt}-${mode}"
 
-    return getCachedPlaylist(playlistId).then((cachedPlaylist) {
+    return LocalStorage.getString(playlistId).then((cachedPlaylist) {
       if (cachedPlaylist != null) {
-        return cachedPlaylist
+        cachedPlaylist = JSON.decode(cachedPlaylist)
+        var createdAt = cachedPlaylist["created_at"] == null ? null 
+          : DateTime.fromMillisecondsSinceEpoch(cachedPlaylist["created_at"] ?? 0)
+
+        var current = DateTime.now()
+        // If it's been a new day since the playlist was created, regenerate it
+        if (createdAt != null && createdAt.day == current.day &&
+            createdAt.month == current.month &&
+            createdAt.year == current.year) {
+          return MbConverter.playlists([cachedPlaylist])[0]
+        }
       }
 
       return lbApi.get_req(
@@ -127,6 +138,8 @@ class Recommendations {
         if (annotation != null) {
           playlist["playlist"]["annotation"] = annotation
         }
+
+        playlist['created_at'] = DateTime.now().millisecondsSinceEpoch
 
         // Cache the playlist in local storage
         LocalStorage.setString(playlistId, JSON.encode(playlist))

@@ -1,0 +1,184 @@
+import "module:std" as std
+import "module:spotube_plugin" as spotube
+import { MbConverter } from "../segments/converter.ht"
+
+var HttpClient = std.HttpClient
+var HttpResponse = std.HttpResponse
+var LocalStorage = spotube.LocalStorage
+var JSON = std.JSON
+
+
+class Recommendations {
+  var lbApi: HttpClient
+  var mbApi: HttpClient
+  final username: string
+
+  construct (this.lbApi, this.mbApi, this.username)
+
+  fun getCreatedForPlaylists() {
+    return lbApi.get_req(
+      "/user/${username}/playlists/createdfor",
+      queryParameters: {
+        count: 25,
+        offset: 0
+      }.toJson()
+    ).then((res){
+      var playlists = res.data["playlists"]
+
+      return MbConverter.playlists(playlists)
+    }).then((playlists){
+      return {
+        id: "created-for-playlists",
+        title: "Created for you",
+        externalUri: "https://listenbrainz.org/user/${username}/recommendations/",
+        browseMore: false,
+        items: playlists
+      }.toJson()
+    })
+  }
+
+  fun getUserListens({maxTs: int, minTs: int, count: int}) {
+    var query = Map()
+    if (maxTs != null) {
+      query["max_ts"] = maxTs
+    }
+    if (minTs != null) {
+      query["min_ts"] = minTs
+    }
+    if (count != null) {
+      query["count"] = count
+    }
+
+    return lbApi.get_req(
+      "/user/${username}/listens",
+      queryParameters: query,
+    ).then((res) => res.data["payload"]["listens"])
+  }
+
+  fun isLbRadioPlaylist(playlistId: string) {
+    return playlistId.startsWith("lb-radio-playlist-")
+  }
+
+  fun getCachedPlaylist(playlistId: string) {
+    return LocalStorage.getString(playlistId).then((cachedPlaylist) {
+      if (cachedPlaylist != null) {
+        return MbConverter.playlists([JSON.decode(cachedPlaylist)])[0]
+      }
+      return null
+    })
+  }
+
+  fun getCachedPlaylistTracks(playlistId: string) -> Future { // Future<List<string>>
+    return LocalStorage.getString(playlistId).then((cachedPlaylist) {
+      var playlist = JSON.decode(cachedPlaylist)
+      if (playlist == null) {
+        return null
+      }
+
+      var mbidQuery = playlist["playlist"]["track"].map((track)=>"rid:${track["identifier"][0].split("/").last}").join(" OR ")
+
+      return mbApi.get_req(
+        "/recording",
+        queryParameters: {
+          query: mbidQuery,
+          limit: playlist["playlist"]["track"].length,
+          fmt: "json",
+        }.toJson()
+      ).then((res){
+        var items = MbConverter.recordings(res.data["recordings"])
+        return {
+          limit: items.length,
+          nextOffset: null,
+          total: items.length,
+          hasMore: false,
+          items: items
+        }.toJson()
+      })
+    })
+  }
+
+  fun generateAndCacheLbRadioPlaylist({
+    prompt: string,
+    mode: string,
+    title: string,
+    annotation: string
+  }) {
+    assert(prompt != null && mode != null && title != null)
+    assert(["easy", "medium", "hard"].contains(mode))
+    var playlistId = "lb-radio-playlist-${prompt}-${mode}"
+
+    return getCachedPlaylist(playlistId).then((cachedPlaylist) {
+      if (cachedPlaylist != null) {
+        return cachedPlaylist
+      }
+
+      return lbApi.get_req(
+        "/explore/lb-radio",
+        queryParameters: {
+          prompt: prompt,
+          mode: mode
+        }.toJson()
+      ).then((res){
+        var playlist = res.data["payload"]["jspf"]
+
+        playlist["playlist"]["identifier"] = "https://listenbrainz.org/playlist/${playlistId}"
+        playlist["playlist"]["title"] = title
+
+        if (annotation != null) {
+          playlist["playlist"]["annotation"] = annotation
+        }
+
+        // Cache the playlist in local storage
+        LocalStorage.setString(playlistId, JSON.encode(playlist))
+
+        return MbConverter.playlists([playlist])[0]
+      })
+    })
+  }
+
+  final moods = {
+    chill: ['ambient', "Chill playlist", "Yo chill my friend!"],
+    energetic: ['energetic', "Pump it up!", "Get ready to move!"],
+    happy: ['upbeat', "Happy Vibes", "Feel good tunes to brighten your day!"],
+    sad: ['melancholy', "Melancholy Moments", "For those reflective times."],
+    focus: ['instrumental', "Focus Beats", "Concentration is key."],
+    workout: ['electronic', "Workout Jams", "Get pumped with these beats!"],
+    party: ['dance', "Party Anthems", "Let's get this party started!"],
+    romantic: ['romantic', "Romantic Evenings", "For those special moments."],
+  }
+
+  fun generateMoodPlaylists() -> Future { // Future<List>
+    var playlistsFuture = Future.value([])
+
+    for(var mood in moods.values) {
+      var tag = mood[0]
+      var title = mood[1]
+      var annotation = mood[2]
+      var playlist = generateAndCacheLbRadioPlaylist(
+        prompt: 'tag:(${tag}) stats:${username}::all_time',
+        mode: 'hard',
+        title: title,
+        annotation: annotation
+      )
+
+      playlistsFuture = playlistsFuture.then((playlists) {
+        return playlist.then((pl) {
+          playlists.add(pl)
+          return playlists
+        })
+      })
+    }
+
+    return playlistsFuture.then((playlists) {
+      return {
+        id: "mood-playlists",
+        title: "Based on your mood",
+        externalUri: "https://listenbrainz.org/explore/lb-radio",
+        browseMore: false,
+        items: playlists
+      }.toJson()
+    })
+  }
+}
+
+export { Recommendations }

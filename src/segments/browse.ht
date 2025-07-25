@@ -1,46 +1,40 @@
 import "module:std" as std
+import "module:spotube_plugin" as spotube
 import { MbConverter } from "./converter.ht"
+import { Recommendations } from "../common/recommendations.ht"
 
 var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
+var LocalStorage = spotube.LocalStorage
+var JSON = std.JSON
+var delayed = std.delayed
+var Duration = std.Duration
 
 class BrowseEndpoint {
   var lbApi: HttpClient
   var mbApi: HttpClient
   final username: string
 
-  construct (this.lbApi, this.mbApi, this.username)
+  var recommendations: Recommendations
 
-  fun getCreatedForPlaylists() {
-    return lbApi.get_req(
-      "/user/${username}/playlists/createdfor",
-      queryParameters: {
-        count: 25,
-        offset: 0
-      }.toJson()
-    ).then((res){
-      var playlists = res.data["playlists"]
-
-      return MbConverter.playlists(playlists)
-    })
+  construct (this.lbApi, this.mbApi, this.username) {
+    this.recommendations = Recommendations(this.lbApi, this.mbApi, this.username)
   }
 
-  fun sections({offset: int, limit: int}) {
-    return getCreatedForPlaylists().then((playlists) {
+  fun sections({offset: int, limit: int}) {    
+    var sectionsFutures = [
+      recommendations.generateMoodPlaylists(),
+      recommendations.getCreatedForPlaylists(),
+    ]
+
+    return Future.wait(sectionsFutures)
+    .then((sections) {
       return {
         limit: limit ?? 25,
         nextOffset: null,
         total: 1,
         hasMore: false,
-        items: [
-          {
-            id: "created-for-playlists",
-            title: "Created for you",
-            externalUri: "https://listenbrainz.org/user/${username}/recommendations/",
-            browseMore: false,
-            items: playlists
-          }.toJson()
-        ]
+        items: sections
       }.toJson()
     })
   }

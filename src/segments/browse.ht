@@ -23,6 +23,7 @@ class BrowseEndpoint {
 
   fun sections({offset: int, limit: int}) {    
     var sectionsFutures = [
+      recommendations.generateTopArtistRadios(),
       recommendations.generateMoodPlaylists(),
       recommendations.getCreatedForPlaylists(),
     ]

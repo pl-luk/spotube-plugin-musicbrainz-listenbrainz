@@ -192,6 +192,54 @@ class Recommendations {
       }.toJson()
     })
   }
+
+  fun getUserTopArtists() -> Future {
+    return  lbApi.get_req(
+      "/stats/user/${username}/artists",
+      queryParameters: {
+        count: 10,
+        offset: 0,
+        range: "quarter"
+      }.toJson()
+    ).then((res){
+      var artists = res.data["payload"]["artists"]
+      
+      return artists.where((artist) => artist["artist_mbid"] != null).toList()
+    })
+  }
+
+  fun generateTopArtistRadios() -> Future {
+    return getUserTopArtists().then((artists){
+      var playlistsFuture = Future.value([])
+
+      for (var artist in artists) {
+        var mbid = artist["artist_mbid"]
+        var playlist = generateAndCacheLbRadioPlaylist(
+          prompt: "artist:(${mbid})",
+          mode: "easy",
+          title: "${artist["artist_name"]} Radio",
+          annotation: "A radio playlist based on ${artist["artist_name"]}'s music"
+        )
+
+        playlistsFuture = playlistsFuture.then((playlists) {
+          return playlist.then((pl) {
+            playlists.add(pl)
+            return playlists
+          })
+        })
+      }
+
+      return playlistsFuture.then((playlists) {
+        return {
+          id: "top-artist-radios",
+          title: "Top Artist Radios",
+          externalUri: "https://listenbrainz.org/explore/lb-radio",
+          browseMore: false,
+          items: playlists
+        }.toJson()
+      })
+    })
+  }
 }
 
 export { Recommendations }

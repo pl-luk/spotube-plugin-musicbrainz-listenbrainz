@@ -3,11 +3,55 @@ import "module:std" as std
 var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
 var RequestOptions = std.RequestOptions
+var DateTime = std.DateTime
 
 class CorePlugin {
   var client: HttpClient
+  var lbApi: HttpClient
 
-  construct (this.client)
+  construct (this.client, this.lbApi)
+
+  /// Scrobble the provided details to the scrobbling service supported by the plugin.
+  /// "scrobbling" must be set as an ability in the plugin.json
+  /// [details] is a map containing the scrobble information, such as:
+  /// - [id] -> The unique identifier of the track.
+  /// - [title] -> The title of the track.
+  /// - [artists] -> List of artists
+  ///   - [id] -> The unique identifier of the artist.
+  ///   - [name] -> The name of the artist.
+  /// - [album] -> The album of the track
+  ///   - [id] -> The unique identifier of the album.
+  ///   - [name] -> The name of the album.
+  /// - [timestamp] -> The timestamp of the scrobble (optional).
+  /// - [duration_ms] -> The duration of the track in milliseconds (optional).
+  /// - [isrc] -> The ISRC code of the track (optional).
+  fun scrobble(details: Map) {
+    return lbApi.post(
+      "/submit-listens",
+      data: {
+        listen_type: "single",
+        payload: [
+          {
+            listened_at: details["timestamp"] ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            track_metadata: {
+              track_name: details["title"],
+              artist_name: details["artists"][0]["name"],
+              release_name: details["album"]["name"],
+              additional_info: {
+                media_player: "Spotube",
+                submission_client: "Spotube Plugin - MusicBrainz ListenBrainz",
+                artist_mbids: details["artists"].map((artist) => artist["id"]).toList(),
+                release_group_mbid: details["album"]["id"],
+                recording_mbid: details["id"],
+                isrc: details["isrc"],
+                duration_ms: details["duration_ms"]
+              }
+            }
+          }
+        ]
+      }.toJson()
+    ).then((res)=> null)
+  }
 
   /// Checks for updates to the plugin.
   /// [currentConfig] is just plugin.json's file content.
@@ -65,6 +109,20 @@ class CorePlugin {
         "changelog": changelog
       }.toJson()
     })
+  }
+
+    /// Returns the support information for the plugin in Markdown or plain text.
+  /// Supports images and links.
+  get support -> string {
+    return '# Support Information
+
+Wow wow
+
+- This is a list item
+- Another item
+
+Bold Text: **bold text**
+    '
   }
 }
 

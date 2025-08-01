@@ -41,7 +41,7 @@ class BrainzMetadataProviderPlugin {
     )
     
     auth = AuthEndpoint(lbApi, mbApi)
-    core = CorePlugin(mbApi) // Just a generic [HttpClient]
+    core = CorePlugin(mbApi, lbApi) // Just a generic [HttpClient]
 
     setAccessToken()
     auth.authStateStream.listen((event) {
@@ -68,6 +68,7 @@ class BrainzMetadataProviderPlugin {
     search = SearchEndpoint(lbApi, mbApi, username)
     track = TrackEndpoint(lbApi, mbApi, username)
     user = UserEndpoint(lbApi, mbApi, username)
+    core = CorePlugin(mbApi, lbApi)
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:example/form.dart';
 import 'package:example/localstorage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hetu_script/hetu_script.dart';
 import 'package:hetu_spotube_plugin/hetu_spotube_plugin.dart';
@@ -143,7 +144,7 @@ class _MyHomeState extends State<MyHome> {
                   onPressed: () async {
                     try {
                       await getIt<Hetu>().eval(
-                        "metadata.updater.check({version: '1.0.0'}.toJson())",
+                        "metadata.core.checkUpdate({version: '1.0.0'}.toJson())",
                       );
                     } catch (e, stackTrace) {
                       prettyPrint("Error during checking update: $e");
@@ -151,6 +152,66 @@ class _MyHomeState extends State<MyHome> {
                     }
                   },
                   child: Text("Check update!"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final support = await getIt<Hetu>().eval(
+                        "metadata.core.support",
+                      );
+                      prettyPrint(support);
+
+                      if (!context.mounted) return;
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            content: MarkdownBody(data: support.toString()),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text("Close"),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    } catch (e, stackTrace) {
+                      prettyPrint("Error during checking support: $e");
+                      debugPrintStack(stackTrace: stackTrace);
+                    }
+                  },
+                  child: Text("Support!"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final support = await getIt<Hetu>().eval("""
+                        metadata.core.scrobble({
+                          id: "5842a3fd-f00c-4ce7-98f8-7f5b044ab0bb",
+                          title: "My House Is Not a Home",
+                          artists: [
+                            {
+                              id: "d8e07579-ff5a-41f2-b7a7-c71880b8287a",
+                              name: "d4vd"
+                            }
+                          ],
+                          album: {
+                            id: "74a2be07-04fc-4713-98d0-a97158cca4bb",
+                            name: "My House Is Not a Home"
+                          },
+                          timestamp: ${DateTime.now().millisecondsSinceEpoch ~/ 1000},
+                          duration_ms: 239000,
+                          isrc: "USUM72401159"
+                        }.toJson())
+                        """);
+                      prettyPrint(support);
+                    } catch (e, stackTrace) {
+                      prettyPrint("Error during checking support: $e");
+                      debugPrintStack(stackTrace: stackTrace);
+                    }
+                  },
+                  child: Text("Scrobble!"),
                 ),
               ],
             ),

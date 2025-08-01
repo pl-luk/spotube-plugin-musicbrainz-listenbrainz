@@ -4,7 +4,7 @@ var HttpClient = std.HttpClient
 var HttpResponse = std.HttpResponse
 var RequestOptions = std.RequestOptions
 
-class PluginUpdater {
+class CorePlugin {
   var client: HttpClient
 
   construct (this.client)
@@ -18,7 +18,7 @@ class PluginUpdater {
   /// - [changelog] Optionally, a changelog for the update (markdown supported).
   ///
   /// If no update is available, it will return null.
-  fun check(currentConfig: Map) -> Future {
+  fun checkUpdate(currentConfig: Map) -> Future {
     var versionParts = currentConfig["version"].split(".")
     var major = int.parse(versionParts[0])
     var minor = int.parse(versionParts[1])
@@ -68,4 +68,4 @@ class PluginUpdater {
   }
 }
 
-export { PluginUpdater }
+export { CorePlugin }

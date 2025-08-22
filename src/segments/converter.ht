@@ -21,7 +21,7 @@ class MbConverter {
         description: p["annotation"] ?? "",
         externalUri: p["identifier"],
         owner: user(p["creator"]),
-        images: [],
+        images: p["images"] ?? [],
         collaborators: [],
         collaborative: false,
         public: p["extension"]["https://musicbrainz.org/doc/jspf#playlist"]["public"] ?? false,

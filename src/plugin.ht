@@ -41,7 +41,7 @@ class BrainzMetadataProviderPlugin {
     )
     
     auth = AuthEndpoint(lbApi, mbApi)
-    core = CorePlugin(mbApi, lbApi) // Just a generic [HttpClient]
+    core = CorePlugin(mbApi, lbApi)
 
     setAccessToken()
     auth.authStateStream.listen((event) {
@@ -50,9 +50,14 @@ class BrainzMetadataProviderPlugin {
   }
 
   fun setAccessToken() {
+    mbApi = HttpClient(
+      HttpBaseOptions(
+        baseUrl: auth.credentials?["mb_url"] ?? "https://musicbrainz.org/ws/2",
+      )
+    )
     lbApi = HttpClient(
       HttpBaseOptions(
-        baseUrl: "https://api.listenbrainz.org/1",
+        baseUrl: auth.credentials?["lb_url"] ?? "https://api.listenbrainz.org/1",
         headers: auth.credentials == null ? null : {
           "Authorization": "Token ${auth.credentials['token']}"
         }.toJson()

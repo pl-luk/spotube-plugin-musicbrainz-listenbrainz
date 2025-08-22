@@ -7,7 +7,10 @@ var HttpResponse = std.HttpResponse
 var LocalStorage = spotube.LocalStorage
 var JSON = std.JSON
 var DateTime = std.DateTime
+var FutureUtils = std.FutureUtils
+var Duration = std.Duration
 
+const _delay = Duration(milliseconds: 200)
 
 class Recommendations {
   var lbApi: HttpClient
@@ -172,29 +175,26 @@ class Recommendations {
   }
 
   fun generateMoodPlaylists() -> Future { // Future<List>
-    var playlistsFuture = Future.value([])
+    var playlistsFuture = [] // List of callbacks returning future
 
     for(var mood in moods.values) {
       var tag = mood[0]
       var title = mood[1]
       var annotation = mood[2]
-      var playlist = generateAndCacheLbRadioPlaylist(
-        prompt: 'tag:(${tag}) stats:${username}::all_time',
-        mode: 'hard',
-        title: title,
-        annotation: annotation,
-        imageUrl: "https://res.cloudinary.com/dszpk1pk9/image/upload/t_media_lib_thumb/spotube-plugin-musicbrainz-listenbrainz/moods/${tag}.webp"
+      
+      playlistsFuture.add(
+        ()=> generateAndCacheLbRadioPlaylist(
+          prompt: 'tag:(${tag}) stats:${username}::all_time',
+          mode: 'hard',
+          title: title,
+          annotation: annotation,
+          imageUrl: "https://res.cloudinary.com/dszpk1pk9/image/upload/t_media_lib_thumb/spotube-plugin-musicbrainz-listenbrainz/moods/${tag}.webp"
+        )
       )
-
-      playlistsFuture = playlistsFuture.then((playlists) {
-        return playlist.then((pl) {
-          playlists.add(pl)
-          return playlists
-        })
-      })
     }
 
-    return playlistsFuture.then((playlists) {
+    return FutureUtils.chain(playlistsFuture, delay: _delay)
+    .then((playlists) {
       return {
         id: "mood-playlists",
         title: "Based on your mood",
@@ -222,26 +222,23 @@ class Recommendations {
 
   fun generateTopArtistRadios() -> Future {
     return getUserTopArtists().then((artists){
-      var playlistsFuture = Future.value([])
+      var playlistsFuture = [] // List of callbacks returning future
 
       for (var artist in artists) {
         var mbid = artist["artist_mbid"]
-        var playlist = generateAndCacheLbRadioPlaylist(
-          prompt: "artist:(${mbid})",
-          mode: "easy",
-          title: "${artist["artist_name"]} Radio",
-          annotation: "A radio playlist based on ${artist["artist_name"]}'s music"
-        )
 
-        playlistsFuture = playlistsFuture.then((playlists) {
-          return playlist.then((pl) {
-            playlists.add(pl)
-            return playlists
-          })
-        })
+        playlistsFuture.add(
+          () => generateAndCacheLbRadioPlaylist(
+            prompt: "artist:(${mbid})",
+            mode: "easy",
+            title: "${artist["artist_name"]} Radio",
+            annotation: "A radio playlist based on ${artist["artist_name"]}'s music"
+          )
+        )
       }
 
-      return playlistsFuture.then((playlists) {
+      return FutureUtils.chain(playlistsFuture, delay: _delay)
+      .then((playlists) {
         return {
           id: "top-artist-radios",
           title: "Top Artist Radios",

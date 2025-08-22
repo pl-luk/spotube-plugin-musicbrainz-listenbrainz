@@ -9,6 +9,7 @@ var LocalStorage = spotube.LocalStorage
 var JSON = std.JSON
 var delayed = std.delayed
 var Duration = std.Duration
+var FutureUtils = std.FutureUtils
 
 class BrowseEndpoint {
   var lbApi: HttpClient
@@ -23,12 +24,12 @@ class BrowseEndpoint {
 
   fun sections({offset: int, limit: int}) {    
     var sectionsFutures = [
-      recommendations.generateTopArtistRadios(),
-      recommendations.generateMoodPlaylists(),
-      recommendations.getCreatedForPlaylists(),
+      () => recommendations.generateTopArtistRadios(),
+      () => recommendations.generateMoodPlaylists(),
+      () => recommendations.getCreatedForPlaylists(),
     ]
 
-    return Future.wait(sectionsFutures)
+    return FutureUtils.chain(sectionsFutures, delay: Duration(milliseconds: 200))
     .then((sections) {
       return {
         limit: limit ?? 25,

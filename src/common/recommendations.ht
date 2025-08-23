@@ -177,7 +177,9 @@ class Recommendations {
   fun generateMoodPlaylists() -> Future { // Future<List>
     var playlistsFuture = [] // List of callbacks returning future
 
-    for(var mood in moods.values) {
+    for(int i =0; i < moods.values.length; i++) {
+      var mood = moods.values.elementAt(i)
+      var moodKey = moods.keys.elementAt(i)
       var tag = mood[0]
       var title = mood[1]
       var annotation = mood[2]
@@ -188,7 +190,7 @@ class Recommendations {
           mode: 'hard',
           title: title,
           annotation: annotation,
-          imageUrl: "https://res.cloudinary.com/dszpk1pk9/image/upload/t_media_lib_thumb/spotube-plugin-musicbrainz-listenbrainz/moods/${tag}.webp"
+          imageUrl: "https://res.cloudinary.com/dszpk1pk9/image/upload/t_media_lib_thumb/spotube-plugin-musicbrainz-listenbrainz/moods/${moodKey}.webp"
         )
       )
     }

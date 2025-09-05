@@ -7,6 +7,12 @@ on:
   #   branches:
   #     - main
   workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: 'Version (x.x.x)'
+        required: true
+        default: 'continuous'
 
 permissions:
   contents: write
@@ -22,7 +28,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.32.7
+          flutter-version: 3.35.2
 
       - name: Install dependencies
         run: dart pub global activate hetu_script_dev_tools
@@ -39,11 +45,11 @@ jobs:
         with:
           path: build/plugin.smplug
 
-      - name: Upload to release (continuous)
+      - name: Upload to release (${{ github.event.inputs.version }})
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: continuous
+          tag: ${{ github.event.inputs.version }}
           omitBodyDuringUpdate: true
           omitNameDuringUpdate: true
           omitPrereleaseDuringUpdate: true

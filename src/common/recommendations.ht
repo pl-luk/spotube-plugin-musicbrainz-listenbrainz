@@ -29,6 +29,26 @@ class Recommendations {
     ).then((res){
       var playlists = res.data["playlists"]
 
+      for(var i = 0; i < playlists.length; i++) {
+        var playlist = playlists[i]
+        var imageName;
+        final title = playlist["playlist"]["title"]
+
+        if(title.contains("Weekly Exploration")) {
+          imageName = "weekly-exploration"
+        } else {
+          imageName = "weekly-jams"
+        } 
+
+        playlists[i]["playlist"]["images"] = [
+          {
+            url: "https://res.cloudinary.com/dszpk1pk9/image/upload/t_media_lib_thumb/spotube-plugin-musicbrainz-listenbrainz/created_for/${imageName}.webp",
+            width: 360,
+            height: 360,
+          }.toJson()
+        ]
+      }
+
       return MbConverter.playlists(playlists)
     }).then((playlists){
       return {

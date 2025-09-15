@@ -114,15 +114,20 @@ class CorePlugin {
     /// Returns the support information for the plugin in Markdown or plain text.
   /// Supports images and links.
   get support -> string {
-    return '# Support Information
+    return '# Support
+![Metabrainz](https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/MetaBrainz_Logo_with_text_%282016%29.svg/512px-MetaBrainz_Logo_with_text_%282016%29.svg.png)
 
-Wow wow
+[MusicBrainz](https://musicbrainz.org) and [Listenbrainz](https://listenbrainz.org) are community-maintained open music database and scrobbling service respectively.
 
-- This is a list item
-- Another item
+These are developed by [MetaBrainz Foundation](https://metabrainz.org/), a non-profit organization.
 
-Bold Text: **bold text**
-    '
+
+To keep these services running, they rely on donations from users like you.
+
+So please donate to MetaBrainz Foundation: 
+
+# [💝 Donate](https://metabrainz.org/donate)
+'
   }
 }
 

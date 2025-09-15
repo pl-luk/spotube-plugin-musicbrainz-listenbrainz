@@ -13,6 +13,12 @@ class MbConverter {
   }
 
   static fun playlists(pl: List) -> List {
+    pl.sort((a, b) {
+      var at = a["playlist"]["date"]
+      var bt = b["playlist"]["date"]
+      return bt.compareTo(at)
+    })
+    
     return pl.map((playlist){
       var p = playlist["playlist"]
       return {

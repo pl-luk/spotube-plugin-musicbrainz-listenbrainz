@@ -1,12 +1,12 @@
 {
   "type": "metadata",
   "version": "0.1.1",
-  "name": "Musicbrainz and Listenbrainz",
+  "name": "Musicbrainz and Listenbrainz Custom",
   "author": "Kingkor Roy Tirtho",
   "description": "Musicbrainz and Listenbrainz integration for Spotube",
   "entryPoint": "BrainzMetadataProviderPlugin",
   "apis": ["webview", "localstorage", "timezone"],
   "abilities": ["authentication", "scrobbling"],
-  "repository": "https://github.com/KRTirtho/spotube-plugin-musicbrainz-listenbrainz",
+  "repository": "https://github.com/pl-luk/spotube-plugin-musicbrainz-listenbrainz",
   "pluginApiVersion": "1.0.0"
 }

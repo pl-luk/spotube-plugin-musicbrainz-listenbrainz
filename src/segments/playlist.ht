@@ -53,7 +53,7 @@ class PlaylistEndpoint {
         "/recording",
         queryParameters: {
           query: mbidQuery,
-          limit: limit ?? 20,
+          limit: limit ?? 500,
           fmt: "json",
         }.toJson()
       ).then((res){

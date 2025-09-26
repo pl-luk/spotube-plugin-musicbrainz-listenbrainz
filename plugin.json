@@ -1,6 +1,6 @@
 {
   "type": "metadata",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "name": "Musicbrainz and Listenbrainz Custom",
   "author": "Kingkor Roy Tirtho",
   "description": "Musicbrainz and Listenbrainz integration for Spotube",

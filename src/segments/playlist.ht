@@ -44,7 +44,6 @@ class PlaylistEndpoint {
     return emulated.getPlaylistTracks(
       id,
       offset: offset ?? 0,
-      limit: limit ?? 500,
       fetchMetadata: false
     ).then((tracks){
       var mbidQuery = tracks["items"].map((track) => "rid:${track["identifier"][0].split("/").last}").join(" OR ")
@@ -53,7 +52,6 @@ class PlaylistEndpoint {
         "/recording",
         queryParameters: {
           query: mbidQuery,
-          limit: limit ?? 500,
           fmt: "json",
         }.toJson()
       ).then((res){

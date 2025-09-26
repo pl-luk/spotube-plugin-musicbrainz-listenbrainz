@@ -31,7 +31,6 @@ class PlaylistEndpoint {
       }.toJson()
     ).then((res){
       var data = res.data
-
       return MbConverter.playlists([data])[0]
     })
   }
@@ -40,11 +39,11 @@ class PlaylistEndpoint {
     if(recommendations.isLbRadioPlaylist(id)) {
       return recommendations.getCachedPlaylistTracks(id)
     }
-    
+
     return emulated.getPlaylistTracks(
       id,
-      offset: offset ?? 0,
-      limit: limit ?? 20,
+      offset: -1,
+      limit: -1,
       fetchMetadata: false
     ).then((tracks){
       var mbidQuery = tracks["items"].map((track) => "rid:${track["identifier"][0].split("/").last}").join(" OR ")
@@ -53,7 +52,7 @@ class PlaylistEndpoint {
         "/recording",
         queryParameters: {
           query: mbidQuery,
-          limit: limit ?? 20,
+          limit: tracks["items"].length,
           fmt: "json",
         }.toJson()
       ).then((res){
